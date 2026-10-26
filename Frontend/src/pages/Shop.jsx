@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import ProductCard from '../components/ProductCard';
 
 const Shop = () => {
@@ -10,7 +11,7 @@ const Shop = () => {
         const fetchProducts = async () => {
             try {
                 const { data } = await axios.get(
-                    'http://localhost:5000/api/products'
+                    `${API_BASE_URL}/api/products`
                 );
                 setProducts(data);
                 setLoading(false);

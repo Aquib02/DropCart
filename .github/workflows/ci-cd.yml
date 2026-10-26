@@ -1,0 +1,98 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ======================================================
+  # Job 1: Backend CI - Syntax verification & dependency check
+  # ======================================================
+  backend-ci:
+    name: Backend CI (Build & Syntax Check)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Verify backend syntax & files
+        run: npm test
+
+  # ======================================================
+  # Job 2: Frontend CI - Linting & Production Build
+  # ======================================================
+  frontend-ci:
+    name: Frontend CI (Lint & Vite Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Build frontend for production
+        run: npm run build
+        env:
+          VITE_API_URL: https://dropcart-backend.onrender.com
+
+  # ======================================================
+  # Job 3: CD - Deploy to Render (Optional webhook trigger)
+  # Runs only when code is pushed to main and CI succeeds
+  # ======================================================
+  deploy:
+    name: Trigger Render Deployment
+    needs: [backend-ci, frontend-ci]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy Backend to Render (if deploy hook configured)
+        if: env.BACKEND_HOOK != ''
+        env:
+          BACKEND_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+        run: |
+          echo "Calling Render Backend Deploy Hook..."
+          curl -s -S -X POST "$BACKEND_HOOK"
+
+      - name: Deploy Frontend to Render (if deploy hook configured)
+        if: env.FRONTEND_HOOK != ''
+        env:
+          FRONTEND_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+        run: |
+          echo "Calling Render Frontend Deploy Hook..."
+          curl -s -S -X POST "$FRONTEND_HOOK"
+
+      - name: Pipeline Completed
+        run: |
+          echo "CI tests passed! Both backend and frontend are ready for production."

@@ -1,5 +1,6 @@
 import { useState, useContext } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';
 
 const AdminDashboard = () => {
@@ -26,7 +27,7 @@ const AdminDashboard = () => {
             };
 
             await axios.post(
-                'http://localhost:5000/api/products',
+                `${API_BASE_URL}/api/products`,
                 { name, price, image, category, countInStock, description },
                 config
             );

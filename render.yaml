@@ -1,0 +1,37 @@
+# Render Infrastructure as Code (Blueprint)
+# https://render.com/docs/blueprint-spec
+
+services:
+  # 1. Backend Web Service (Node.js + Express + MongoDB)
+  - type: web
+    name: dropcart-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false # Set securely in Render dashboard (e.g. MongoDB Atlas connection string)
+      - key: JWT_SECRET
+        sync: false # Set securely in Render dashboard
+
+  # 2. Frontend Static Site (React + Vite + Tailwind)
+  - type: web
+    name: dropcart-frontend
+    runtime: static
+    plan: free
+    rootDir: Frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false # Backend Render URL, e.g. https://dropcart-backend.onrender.com
+    routes:
+      # Rewrite all frontend client-side routes to index.html (React Router)
+      - type: rewrite
+        source: /*
+        destination: /index.html

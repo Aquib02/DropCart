@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import ProductCard from '../components/ProductCard';
 
 const Home = () => {
@@ -10,7 +11,7 @@ const Home = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const { data } = await axios.get('http://localhost:5000/api/products');
+                const { data } = await axios.get(`${API_BASE_URL}/api/products`);
                 setProducts(data.slice(0, 4)); // Show top 4 featured products
                 setLoading(false);
             } catch (error) {

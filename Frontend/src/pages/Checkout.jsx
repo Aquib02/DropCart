@@ -1,12 +1,23 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 
 const Checkout = () => {
     const { cartItems, totalPrice, clearCart } = useContext(CartContext);
     const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    // Form states for shipping address
+    const [address, setAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [postalCode, setPostalCode] = useState('');
+    const [country, setCountry] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('COD');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     if (user && user.isAdmin) {
         return (
@@ -28,17 +39,6 @@ const Checkout = () => {
             </div>
         );
     }
-
-    const navigate = useNavigate();
-
-    // Form states for shipping address
-    const [address, setAddress] = useState('');
-    const [city, setCity] = useState('');
-    const [postalCode, setPostalCode] = useState('');
-    const [country, setCountry] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState('COD');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
 
     const submitHandler = async (e) => {
         e.preventDefault();
@@ -77,7 +77,7 @@ const Checkout = () => {
             };
 
             const { data } = await axios.post(
-                'http://localhost:5000/api/orders',
+                `${API_BASE_URL}/api/orders`,
                 orderData,
                 config
             );

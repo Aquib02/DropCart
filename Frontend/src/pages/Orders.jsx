@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';
 
 const Orders = () => {
@@ -17,7 +18,7 @@ const Orders = () => {
                     },
                 };
                 const { data } = await axios.get(
-                    'http://localhost:5000/api/orders/myorders',
+                    `${API_BASE_URL}/api/orders/myorders`,
                     config
                 );
                 setOrders(data);

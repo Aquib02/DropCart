@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import { CartContext } from '../context/CartContext';
 
 const ProductDetails = () => {
@@ -15,7 +16,7 @@ const ProductDetails = () => {
         const fetchProduct = async () => {
             try {
                 const { data } = await axios.get(
-                    `http://localhost:5000/api/products/${id}`
+                    `${API_BASE_URL}/api/products/${id}`
                 );
                 setProduct(data);
                 setLoading(false);

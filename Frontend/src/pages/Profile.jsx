@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';
 
 const Profile = () => {
@@ -28,7 +29,7 @@ const Profile = () => {
                 };
 
                 const { data } = await axios.get(
-                    'http://localhost:5000/api/users/profile',
+                    `${API_BASE_URL}/api/users/profile`,
                     config
                 );
                 
@@ -59,7 +60,7 @@ const Profile = () => {
             };
 
             const { data } = await axios.put(
-                'http://localhost:5000/api/users/profile',
+                `${API_BASE_URL}/api/users/profile`,
                 { name, email, phone, address },
                 config
             );
