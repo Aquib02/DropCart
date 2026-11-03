@@ -339,6 +339,10 @@ const AdminDashboard = () => {
                 heroBadge: data.heroBadge,
                 themeColor: data.themeColor,
             });
+            if (data.themeColor) {
+                document.documentElement.setAttribute('data-theme', data.themeColor);
+                localStorage.setItem('dropcart_theme', data.themeColor);
+            }
             setAppearanceLoading(false);
             setAppearanceMessage('Storefront appearance updated successfully! Live on site.');
             setTimeout(() => setAppearanceMessage(''), 3000);
@@ -1199,9 +1203,10 @@ const AdminDashboard = () => {
                                         <button
                                             key={c.id}
                                             type="button"
-                                            onClick={() =>
-                                                setAppearance({ ...appearance, themeColor: c.id })
-                                            }
+                                            onClick={() => {
+                                                setAppearance({ ...appearance, themeColor: c.id });
+                                                document.documentElement.setAttribute('data-theme', c.id);
+                                            }}
                                             className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition ${
                                                 appearance.themeColor === c.id
                                                     ? 'border-gray-900 bg-gray-900 text-white shadow-sm'

@@ -5,5 +5,100 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: #f3f4f6; /* light gray background */
+  background-color: #f8fafc;
+}
+
+/* Storefront Dynamic Accent Theme Colors */
+:root, [data-theme="orange"] {
+  --theme-primary: #f97316; /* Warm Orange */
+  --theme-hover: #ea580c;
+  --theme-light: #fff7ed;
+  --theme-border: #fed7aa;
+  --theme-shadow: rgba(249, 115, 22, 0.25);
+}
+
+[data-theme="emerald"] {
+  --theme-primary: #059669; /* Emerald Green */
+  --theme-hover: #047857;
+  --theme-light: #ecfdf5;
+  --theme-border: #a7f3d0;
+  --theme-shadow: rgba(5, 150, 105, 0.25);
+}
+
+[data-theme="indigo"] {
+  --theme-primary: #4f46e5; /* Indigo Blue */
+  --theme-hover: #4338ca;
+  --theme-light: #eef2ff;
+  --theme-border: #c7d2fe;
+  --theme-shadow: rgba(79, 70, 229, 0.25);
+}
+
+[data-theme="rose"] {
+  --theme-primary: #e11d48; /* Rose Red */
+  --theme-hover: #be123c;
+  --theme-light: #fff1f2;
+  --theme-border: #fecdd3;
+  --theme-shadow: rgba(225, 29, 72, 0.25);
+}
+
+[data-theme="blue"], [data-theme="cyan"] {
+  --theme-primary: #0284c7; /* Ocean Cyan */
+  --theme-hover: #0369a1;
+  --theme-light: #f0f9ff;
+  --theme-border: #bae6fd;
+  --theme-shadow: rgba(2, 132, 199, 0.25);
+}
+
+/* Universal Storefront Dynamic Color Overrides */
+[data-theme] .bg-orange-500,
+[data-theme] .bg-amber-500 {
+  background-color: var(--theme-primary) !important;
+}
+
+[data-theme] .hover\:bg-orange-600:hover,
+[data-theme] .hover\:bg-amber-600:hover {
+  background-color: var(--theme-hover) !important;
+}
+
+[data-theme] .text-orange-500,
+[data-theme] .text-orange-600,
+[data-theme] .text-amber-500,
+[data-theme] .text-amber-600 {
+  color: var(--theme-primary) !important;
+}
+
+[data-theme] .hover\:text-orange-600:hover,
+[data-theme] .hover\:text-orange-500:hover {
+  color: var(--theme-hover) !important;
+}
+
+[data-theme] .border-orange-500,
+[data-theme] .border-amber-500 {
+  border-color: var(--theme-primary) !important;
+}
+
+[data-theme] .bg-orange-50,
+[data-theme] .bg-amber-50 {
+  background-color: var(--theme-light) !important;
+}
+
+[data-theme] .border-orange-200,
+[data-theme] .border-amber-200 {
+  border-color: var(--theme-border) !important;
+}
+
+[data-theme] .from-orange-500,
+[data-theme] .from-amber-500 {
+  --tw-gradient-from: var(--theme-primary) var(--tw-gradient-from-position) !important;
+}
+
+[data-theme] .to-amber-500,
+[data-theme] .to-orange-500 {
+  --tw-gradient-to: var(--theme-hover) var(--tw-gradient-to-position) !important;
+}
+
+[data-theme] .shadow-orange-500\/20,
+[data-theme] .shadow-orange-500\/25,
+[data-theme] .shadow-orange-500\/30 {
+  --tw-shadow-color: var(--theme-shadow) !important;
 }

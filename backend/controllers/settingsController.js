@@ -44,6 +44,13 @@ const updateSettings = async (req, res) => {
         if (featuredTag !== undefined) settings.featuredTag = featuredTag;
 
         const updated = await settings.save();
+
+        // Real-Time Notification: Emit appearance & theme changes to all storefront clients
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('settingsUpdated', updated);
+        }
+
         res.json(updated);
     } catch (error) {
         res.status(500).json({ message: error.message });
