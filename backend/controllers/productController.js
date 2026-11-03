@@ -323,7 +323,32 @@ const updateProduct = async (req, res) => {
                 product.specifications = specifications;
             }
 
+            const oldPrice = product.price;
             const updatedProduct = await product.save();
+
+            // Real-Time Notification: Check for low-stock and price drop
+            const io = req.app.get('io');
+            if (io) {
+                if (updatedProduct.countInStock <= 5) {
+                    io.to('admin_channel').emit('lowStockAlert', {
+                        productId: updatedProduct._id,
+                        name: updatedProduct.name,
+                        stock: updatedProduct.countInStock,
+                        image: updatedProduct.image,
+                        time: new Date()
+                    });
+                }
+                if (updatedProduct.price < oldPrice) {
+                    io.emit('priceDropAlert', {
+                        productId: updatedProduct._id,
+                        name: updatedProduct.name,
+                        newPrice: updatedProduct.price,
+                        oldPrice: oldPrice,
+                        discountPercent: updatedProduct.discountPercent
+                    });
+                }
+            }
+
             res.json(updatedProduct);
         } else {
             res.status(404).json({ message: 'Product not found' });

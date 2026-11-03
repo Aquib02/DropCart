@@ -50,6 +50,18 @@ const addOrderItems = async (req, res) => {
         });
 
         const createdOrder = await order.save();
+
+        // Real-Time Notification: Emit new order to admin channel
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin_channel').emit('newOrderPlaced', {
+                orderId: createdOrder._id,
+                totalPrice: createdOrder.totalPrice,
+                customer: req.user.name,
+                createdAt: createdOrder.createdAt
+            });
+        }
+
         res.status(201).json(createdOrder);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -158,6 +170,24 @@ const updateOrderStatus = async (req, res) => {
         }
 
         const updatedOrder = await order.save();
+
+        // Real-Time Notification: Emit order status update to user & admin
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`user_${order.user}`).emit('orderStatusUpdated', {
+                orderId: updatedOrder._id,
+                status: updatedOrder.status,
+                isPaid: updatedOrder.isPaid,
+                updatedAt: new Date()
+            });
+            io.to('admin_channel').emit('orderStatusUpdated', {
+                orderId: updatedOrder._id,
+                status: updatedOrder.status,
+                isPaid: updatedOrder.isPaid,
+                updatedAt: new Date()
+            });
+        }
+
         res.json(updatedOrder);
     } catch (error) {
         res.status(500).json({ message: error.message });

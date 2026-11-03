@@ -15,11 +15,13 @@ import {
     X,
     Sparkles,
     Scale,
+    Bell,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { CompareContext } from '../context/CompareContext';
+import { useSocket } from '../context/SocketContext';
 import { API_BASE_URL } from '../config';
 
 const Navbar = () => {
@@ -27,9 +29,11 @@ const Navbar = () => {
     const { totalCount } = useContext(CartContext);
     const { wishlistCount } = useContext(WishlistContext);
     const { compareItems, setIsCompareModalOpen } = useContext(CompareContext) || { compareItems: [] };
+    const { notifications = [], unreadCount = 0, markAllAsRead, clearNotifications } = useSocket() || {};
     const navigate = useNavigate();
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [notifOpen, setNotifOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState({ products: [], categories: [] });
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -299,6 +303,70 @@ const Navbar = () => {
                                 </span>
                             )}
                         </Link>
+
+                        {/* Real-Time Notification Bell */}
+                        <div className="relative">
+                            <button
+                                onClick={() => {
+                                    setNotifOpen(!notifOpen);
+                                    if (unreadCount > 0 && markAllAsRead) markAllAsRead();
+                                }}
+                                className="relative flex h-9 w-9 items-center justify-center rounded-xl text-gray-700 transition hover:bg-gray-100 hover:text-amber-600"
+                                title="Live Notifications"
+                            >
+                                <Bell className="h-5 w-5" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-white shadow-sm animate-pulse">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {notifOpen && (
+                                <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-gray-200 bg-white shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95">
+                                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
+                                        <h4 className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                            <span>Live Alerts</span>
+                                            {notifications.length > 0 && (
+                                                <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full font-black">
+                                                    {notifications.length}
+                                                </span>
+                                            )}
+                                        </h4>
+                                        {notifications.length > 0 && (
+                                            <button
+                                                onClick={clearNotifications}
+                                                className="text-[10px] text-gray-400 hover:text-red-500 font-semibold"
+                                            >
+                                                Clear
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="max-h-64 overflow-y-auto space-y-2">
+                                        {notifications.length === 0 ? (
+                                            <div className="py-6 text-center text-xs text-gray-400">
+                                                No new notifications
+                                            </div>
+                                        ) : (
+                                            notifications.map((n) => (
+                                                <div
+                                                    key={n.id}
+                                                    className="p-2.5 rounded-xl bg-gray-50 hover:bg-amber-50/60 border border-gray-100 transition-colors"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[11px] font-bold text-gray-900">{n.title}</span>
+                                                        <span className="text-[9px] text-gray-400">{n.time}</span>
+                                                    </div>
+                                                    <p className="text-[11px] text-gray-600 mt-1 leading-snug">{n.message}</p>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Cart Button with Count Badge (Matching Screenshot) */}
                         <Link

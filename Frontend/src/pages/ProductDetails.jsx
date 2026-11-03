@@ -23,6 +23,7 @@ import { WishlistContext } from '../context/WishlistContext';
 import { AuthContext } from '../context/AuthContext';
 import { CompareContext } from '../context/CompareContext';
 import RecentlyViewedProducts, { recordRecentlyViewed } from '../components/RecentlyViewedProducts';
+import AIReviewSummary from '../components/AIReviewSummary';
 
 const ProductDetails = () => {
     const { id } = useParams();
@@ -681,7 +682,9 @@ const ProductDetails = () => {
 
                         {/* REVIEWS TAB */}
                         {activeTab === 'reviews' && (
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            <div>
+                                <AIReviewSummary productId={product._id} />
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                                 {/* Left Rating Breakdown Column */}
                                 <div className="lg:col-span-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-5">
                                     <div className="flex items-center gap-3">
@@ -819,6 +822,7 @@ const ProductDetails = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
                         )}
                     </div>
                 </div>

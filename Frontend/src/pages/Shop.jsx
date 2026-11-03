@@ -18,6 +18,30 @@ const Shop = () => {
     const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
     const [selectedSort, setSelectedSort] = useState('newest');
     const [inStockOnly, setInStockOnly] = useState(false);
+    const [aiSummary, setAiSummary] = useState('');
+    const [isAiSearching, setIsAiSearching] = useState(false);
+
+    const handleNLSearch = async (queryToSearch) => {
+        const q = queryToSearch || searchTerm;
+        if (!q.trim()) return;
+        try {
+            setIsAiSearching(true);
+            setLoading(true);
+            const { data } = await axios.post('/api/ai/nl-search', { query: q });
+            if (data.success) {
+                setProducts(data.products);
+                setAiSummary(data.aiSummary);
+                if (data.parsedIntent?.category && data.parsedIntent.category !== 'All') {
+                    setSelectedCategory(data.parsedIntent.category);
+                }
+            }
+        } catch (err) {
+            console.error('NL Search failed:', err);
+        } finally {
+            setIsAiSearching(false);
+            setLoading(false);
+        }
+    };
 
     // Fetch distinct categories
     useEffect(() => {
@@ -116,6 +140,25 @@ const Shop = () => {
 
                 {/* Filter & Search Bar Toolbar */}
                 <div className="mb-8 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+                    {/* AI Reasoning Pill */}
+                    {aiSummary && (
+                        <div className="mb-4 flex items-center justify-between rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 px-4 py-3">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                                <span className="text-xs font-semibold text-gray-800">{aiSummary}</span>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setAiSummary('');
+                                    resetFilters();
+                                }}
+                                className="text-xs text-amber-700 font-bold hover:underline shrink-0"
+                            >
+                                Clear AI Filter
+                            </button>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
                         {/* Search Input */}
                         <div className="relative md:col-span-5">
@@ -196,6 +239,30 @@ const Shop = () => {
                                 Clear all filters
                             </button>
                         )}
+                    </div>
+
+                    {/* AI Quick Query Chips */}
+                    <div className="mt-3 flex items-center gap-2 overflow-x-auto pt-3 border-t border-gray-100 no-scrollbar">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500" /> AI Suggestions:
+                        </span>
+                        {[
+                            'Laptops under ₹50,000',
+                            '5G phones with AMOLED',
+                            'Running shoes under ₹3,000',
+                            'Wireless earbuds with ANC',
+                        ].map((query, i) => (
+                            <button
+                                key={i}
+                                onClick={() => {
+                                    setSearchTerm(query);
+                                    handleNLSearch(query);
+                                }}
+                                className="whitespace-nowrap rounded-full bg-amber-50 border border-amber-200/80 px-3 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-100 transition shrink-0"
+                            >
+                                {query}
+                            </button>
+                        ))}
                     </div>
                 </div>
 

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CompareDrawer from './components/CompareDrawer';
+import AIAssistantDrawer from './components/AIAssistantDrawer';
 
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -42,6 +43,7 @@ function App() {
                     </Routes>
                 </main>
                 <CompareDrawer />
+                <AIAssistantDrawer />
                 <Footer />
             </div>
         </Router>

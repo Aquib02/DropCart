@@ -1,6 +1,7 @@
-import { useContext } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Scale, ShoppingBag, Star, Check, AlertCircle } from 'lucide-react';
+import axios from 'axios';
+import { X, Scale, ShoppingBag, Star, Check, AlertCircle, Sparkles, Award } from 'lucide-react';
 import { CompareContext } from '../context/CompareContext';
 import { CartContext } from '../context/CartContext';
 
@@ -14,6 +15,37 @@ const CompareDrawer = () => {
     } = useContext(CompareContext);
 
     const { addToCart } = useContext(CartContext);
+    const [aiAnalysis, setAiAnalysis] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+
+    useEffect(() => {
+        if (!isCompareModalOpen || compareItems.length < 2) {
+            setAiAnalysis(null);
+            return;
+        }
+
+        let isMounted = true;
+        const fetchAiAnalysis = async () => {
+            try {
+                setAiLoading(true);
+                const { data } = await axios.post('/api/ai/compare-analysis', {
+                    productIds: compareItems.map((p) => p._id),
+                });
+                if (isMounted && data.success) {
+                    setAiAnalysis(data);
+                }
+            } catch (e) {
+                console.warn('AI compare failed:', e.message);
+            } finally {
+                if (isMounted) setAiLoading(false);
+            }
+        };
+
+        fetchAiAnalysis();
+        return () => {
+            isMounted = false;
+        };
+    }, [isCompareModalOpen, compareItems]);
 
     if (compareItems.length === 0) return null;
 
@@ -134,7 +166,38 @@ const CompareDrawer = () => {
                         </div>
 
                         {/* Modal Body: Comparison Grid */}
-                        <div className="flex-1 overflow-x-auto overflow-y-auto p-6">
+                        <div className="flex-1 overflow-x-auto overflow-y-auto p-6 space-y-6">
+                            {/* AI Verdict Card */}
+                            {aiAnalysis && (
+                                <div className="rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 p-4 border border-amber-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center">
+                                            <Sparkles className="w-3.5 h-3.5" />
+                                        </div>
+                                        <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                                            AI Verdict & Recommendation
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-700 leading-relaxed font-medium mb-3">
+                                        {aiAnalysis.aiRecommendation}
+                                    </p>
+                                    <div className="flex flex-wrap gap-2 text-xs">
+                                        {aiAnalysis.valueWinner && (
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-amber-300 font-bold text-gray-800 shadow-2xs">
+                                                <Award className="w-3.5 h-3.5 text-amber-500" />
+                                                Best Value: {aiAnalysis.valueWinner.title} (₹{Number(aiAnalysis.valueWinner.price).toLocaleString('en-IN')})
+                                            </span>
+                                        )}
+                                        {aiAnalysis.topRatedWinner && (
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-emerald-300 font-bold text-gray-800 shadow-2xs">
+                                                <Star className="w-3.5 h-3.5 text-emerald-500 fill-current" />
+                                                Top Rated: {aiAnalysis.topRatedWinner.title} ({aiAnalysis.topRatedWinner.rating}★)
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="min-w-[640px]">
                                 <table className="w-full border-collapse text-left">
                                     <thead>
