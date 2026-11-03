@@ -10,6 +10,7 @@ const User = require('./models/userModel');
 const Product = require('./models/productModel');
 const Order = require('./models/orderModel');
 const StoreSettings = require('./models/storeSettingsModel');
+const Coupon = require('./models/couponModel');
 
 dotenv.config();
 
@@ -392,6 +393,7 @@ const seedCompleteDatabase = async () => {
             Product.deleteMany({}),
             Order.deleteMany({}),
             StoreSettings.deleteMany({}),
+            Coupon.deleteMany({}),
         ]);
         console.log('Collections purged.');
 
@@ -448,8 +450,8 @@ const seedCompleteDatabase = async () => {
         console.log('  🛡️ Staff:     rahul.staff@dropcart.com (Password: staff123)');
         console.log('  👤 Customer:  aquib@gmail.com (Password: aquib123)');
 
-        // 3. CREATE PRODUCTS WITH VERIFIED REVIEWS
-        console.log('Seeding products with customer reviews...');
+        // 3. CREATE PRODUCTS WITH VERIFIED REVIEWS, SPECIFICATIONS, AND VARIANTS
+        console.log('Seeding products with customer reviews, specifications & variants...');
         const createdProducts = [];
         for (const item of dummyProducts) {
             const reviews = [
@@ -469,13 +471,114 @@ const seedCompleteDatabase = async () => {
                 },
             ];
 
+            // Multi-image gallery for zoom showcase
+            const images = [
+                item.image,
+                item.image.includes('unsplash.com') ? `${item.image}&rot=90` : item.image,
+                item.image.includes('unsplash.com') ? `${item.image}&sat=50` : item.image,
+            ];
+
+            // Category-based realistic variants
+            let variants = [];
+            if (item.category === 'Mobiles') {
+                variants = [
+                    { name: 'Storage', options: ['128 GB', '256 GB'], priceDelta: 0 },
+                    { name: 'Color', options: ['Starlight Blue', 'Midnight Black'], priceDelta: 0 },
+                ];
+            } else if (item.category === 'Electronics') {
+                variants = [
+                    { name: 'Color', options: ['Matte Black', 'Silver Grey'], priceDelta: 0 },
+                ];
+            } else if (item.category === 'Fashion') {
+                variants = [
+                    { name: 'Size', options: ['S', 'M', 'L', 'XL'], priceDelta: 0 },
+                    { name: 'Color', options: ['Navy Blue', 'Classic Black'], priceDelta: 0 },
+                ];
+            } else if (item.category === 'Home') {
+                variants = [
+                    { name: 'Size', options: ['Single Bed', 'Double Bed (Queen)'], priceDelta: 0 },
+                ];
+            }
+
+            // Structured technical specifications
+            const specifications = [
+                {
+                    groupName: 'General',
+                    items: [
+                        { key: 'Brand', value: item.brand || 'DropCart' },
+                        { key: 'Model Name', value: item.name },
+                        { key: 'Category', value: item.category },
+                        { key: 'Warranty', value: '1 Year Manufacturer Brand Warranty' },
+                    ],
+                },
+                {
+                    groupName: 'Specifications & Features',
+                    items: [
+                        { key: 'Highlights', value: item.description },
+                        { key: 'In The Box', value: '1 Main Unit, Accessories, Quick Start Guide, Warranty Card' },
+                        { key: 'Country of Origin', value: 'India' },
+                    ],
+                },
+            ];
+
             const prod = await Product.create({
                 ...item,
+                images,
+                variants,
+                specifications,
+                views: Math.floor(Math.random() * 250) + 50,
                 reviews,
             });
             createdProducts.push(prod);
         }
         console.log(`Created ${createdProducts.length} rich catalog products across categories.`);
+
+        // Seed Active Coupons
+        console.log('Seeding active promotional coupons...');
+        await Coupon.create([
+            {
+                code: 'DIWALI10',
+                description: 'Extra 10% OFF on all orders above ₹999 (Max ₹1,000)',
+                discountType: 'percentage',
+                discountAmount: 10,
+                minPurchase: 999,
+                maxDiscount: 1000,
+                expiryDate: new Date(Date.now() + 60 * 86400000),
+                usageLimit: 5000,
+                isActive: true,
+            },
+            {
+                code: 'FESTIVE500',
+                description: 'Flat ₹500 Instant Discount on orders above ₹2,999',
+                discountType: 'fixed',
+                discountAmount: 500,
+                minPurchase: 2999,
+                expiryDate: new Date(Date.now() + 45 * 86400000),
+                usageLimit: 2000,
+                isActive: true,
+            },
+            {
+                code: 'WELCOME100',
+                description: 'Flat ₹100 Welcome OFF on cart value above ₹499',
+                discountType: 'fixed',
+                discountAmount: 100,
+                minPurchase: 499,
+                expiryDate: new Date(Date.now() + 90 * 86400000),
+                usageLimit: 10000,
+                isActive: true,
+            },
+            {
+                code: 'FLAT200',
+                description: 'Flat ₹200 OFF on orders above ₹1,499',
+                discountType: 'fixed',
+                discountAmount: 200,
+                minPurchase: 1499,
+                expiryDate: new Date(Date.now() + 30 * 86400000),
+                usageLimit: 1500,
+                isActive: true,
+            },
+        ]);
+        console.log('Coupons seeded: DIWALI10, FESTIVE500, WELCOME100, FLAT200.');
 
         // Add 2 items to Aquib's wishlist
         customerAquib.wishlist = [createdProducts[0]._id, createdProducts[8]._id];

@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../config';
 import CategoryBar from '../components/CategoryBar';
 import HeroBannerSlider from '../components/HeroBannerSlider';
 import ProductCard from '../components/ProductCard';
+import RecentlyViewedProducts from '../components/RecentlyViewedProducts';
 
 const Home = () => {
     const [products, setProducts] = useState([]);
@@ -170,6 +171,9 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Recently Viewed Products Strip */}
+            <RecentlyViewedProducts />
 
             {/* Flipkart Trust Strip */}
             <section className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">

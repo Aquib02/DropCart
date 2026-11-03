@@ -12,6 +12,8 @@ const authRoutes = require('./routes/authRoutes.js');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes.js');
 const settingsRoutes = require('./routes/settingsRoutes.js');
+const couponRoutes = require('./routes/couponRoutes.js');
+const priceAlertRoutes = require('./routes/priceAlertRoutes.js');
 
 connectDB();
 
@@ -25,6 +27,8 @@ app.use('/api/users', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/alerts', priceAlertRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {

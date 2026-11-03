@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import CompareDrawer from './components/CompareDrawer';
 
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -40,6 +41,7 @@ function App() {
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </main>
+                <CompareDrawer />
                 <Footer />
             </div>
         </Router>

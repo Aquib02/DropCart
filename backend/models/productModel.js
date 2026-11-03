@@ -25,6 +25,31 @@ const reviewSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+const specificationItemSchema = new mongoose.Schema(
+    {
+        key: { type: String, required: true },
+        value: { type: String, required: true },
+    },
+    { _id: false }
+);
+
+const specificationGroupSchema = new mongoose.Schema(
+    {
+        groupName: { type: String, default: 'General' },
+        items: [specificationItemSchema],
+    },
+    { _id: false }
+);
+
+const variantSchema = new mongoose.Schema(
+    {
+        name: { type: String, required: true }, // e.g. "Color" or "Storage" or "Size"
+        options: [{ type: String, required: true }], // e.g. ["128 GB", "256 GB"]
+        priceDelta: { type: Number, default: 0 }, // price modifier
+    },
+    { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
     {
         name: {
@@ -35,10 +60,17 @@ const productSchema = new mongoose.Schema(
         brand: {
             type: String,
             default: 'DropCart',
+            trim: true,
         },
+        // Primary cover image
         image: {
             type: String,
             required: true,
+        },
+        // Multi-image gallery for zoom and thumbnail switcher
+        images: {
+            type: [String],
+            default: [],
         },
         description: {
             type: String,
@@ -91,10 +123,23 @@ const productSchema = new mongoose.Schema(
             type: String,
             default: '', // e.g. "Top Deal", "Bestseller", "Trending"
         },
+        views: {
+            type: Number,
+            default: 0,
+        },
+        // Product variants (storage, color, size)
+        variants: [variantSchema],
+        // Categorized specifications table
+        specifications: [specificationGroupSchema],
         reviews: [reviewSchema],
     },
     { timestamps: true }
 );
+
+// Search & performance indexes
+productSchema.index({ name: 'text', brand: 'text', category: 'text', description: 'text' });
+productSchema.index({ category: 1, price: 1 });
+productSchema.index({ isFeatured: 1, createdAt: -1 });
 
 const Product = mongoose.model('Product', productSchema);
 module.exports = Product;

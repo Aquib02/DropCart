@@ -2,8 +2,11 @@ const express = require('express');
 const router = express.Router();
 const {
     getProduct,
+    getSuggestions,
     getCategories,
     getProductById,
+    compareProducts,
+    getRelatedProducts,
     deleteProduct,
     updateProduct,
     createProduct,
@@ -15,7 +18,9 @@ const { protect, hasPermission } = require('../middleware/authMiddleware');
 
 // Public catalog routes
 router.route('/').get(getProduct).post(protect, hasPermission('manage_products'), createProduct);
+router.get('/suggestions', getSuggestions);
 router.get('/categories', getCategories);
+router.post('/compare', compareProducts);
 
 // Specific product routes
 router
@@ -23,6 +28,9 @@ router
     .get(getProductById)
     .delete(protect, hasPermission('manage_products'), deleteProduct)
     .put(protect, hasPermission('manage_products'), updateProduct);
+
+// Related and bundle recommendations
+router.get('/:id/related', getRelatedProducts);
 
 // Stock quick toggle
 router.patch('/:id/stock', protect, hasPermission('manage_products'), toggleProductStock);

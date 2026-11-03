@@ -5,13 +5,16 @@ import './index.css';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { CompareProvider } from './context/CompareContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
       <CartProvider>
         <WishlistProvider>
-          <App />
+          <CompareProvider>
+            <App />
+          </CompareProvider>
         </WishlistProvider>
       </CartProvider>
     </AuthProvider>

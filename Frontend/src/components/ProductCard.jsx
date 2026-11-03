@@ -1,18 +1,21 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useContext, useState } from 'react';
-import { Heart, Star, ShoppingBag, Eye, Check, Zap } from 'lucide-react';
+import { Heart, Star, ShoppingBag, Eye, Check, Zap, Scale } from 'lucide-react';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { AuthContext } from '../context/AuthContext';
+import { CompareContext } from '../context/CompareContext';
 
 const ProductCard = ({ product }) => {
     const { addToCart } = useContext(CartContext);
     const { isInWishlist, toggleWishlist } = useContext(WishlistContext);
     const { user } = useContext(AuthContext);
+    const { addToCompare, removeFromCompare, isInCompare } = useContext(CompareContext) || {};
     const navigate = useNavigate();
 
     const [added, setAdded] = useState(false);
     const isWishlisted = isInWishlist(product._id);
+    const isCompared = isInCompare ? isInCompare(product._id) : false;
     const isOutOfStock = product.isOutOfStock || product.countInStock <= 0;
 
     const handleWishlistClick = async (e) => {
@@ -82,6 +85,29 @@ const ProductCard = ({ product }) => {
                 >
                     <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
                 </button>
+
+                {/* Compare Button */}
+                {addToCompare && (
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (isCompared) {
+                                removeFromCompare(product._id);
+                            } else {
+                                addToCompare(product);
+                            }
+                        }}
+                        className={`absolute right-2.5 top-12 flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-all duration-200 ${
+                            isCompared
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white/90 text-gray-500 hover:bg-white hover:text-blue-600'
+                        }`}
+                        title={isCompared ? 'Remove from Compare' : 'Add to Compare'}
+                    >
+                        <Scale className="h-3.5 w-3.5" />
+                    </button>
+                )}
 
                 {/* Out of Stock Overlay */}
                 {isOutOfStock && (

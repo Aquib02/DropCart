@@ -14,20 +14,25 @@ import {
     Plane,
     X,
     Sparkles,
+    Scale,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
+import { CompareContext } from '../context/CompareContext';
 import { API_BASE_URL } from '../config';
 
 const Navbar = () => {
     const { user, logout, updateUser } = useContext(AuthContext);
     const { totalCount } = useContext(CartContext);
     const { wishlistCount } = useContext(WishlistContext);
+    const { compareItems, setIsCompareModalOpen } = useContext(CompareContext) || { compareItems: [] };
     const navigate = useNavigate();
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState({ products: [], categories: [] });
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [announcement, setAnnouncement] = useState('');
     const [bannerActive, setBannerActive] = useState(true);
 
@@ -35,6 +40,29 @@ const Navbar = () => {
     const [showLocationModal, setShowLocationModal] = useState(false);
     const [pincode, setPincode] = useState(user?.deliveryPincode || '400001');
     const [city, setCity] = useState(user?.deliveryCity || 'Mumbai');
+
+    // Debounced search suggestions
+    useEffect(() => {
+        if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+            setSuggestions({ products: [], categories: [] });
+            setShowSuggestions(false);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const { data } = await axios.get(
+                    `${API_BASE_URL}/api/products/suggestions?q=${encodeURIComponent(searchQuery.trim())}`
+                );
+                setSuggestions(data || { products: [], categories: [] });
+                setShowSuggestions(true);
+            } catch {
+                setSuggestions({ products: [], categories: [] });
+            }
+        }, 200);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -118,20 +146,107 @@ const Navbar = () => {
                         </Link>
                     </div>
 
-                    {/* Search Bar (Prominent, matching screenshot) */}
-                    <form
-                        onSubmit={searchHandler}
-                        className="flex flex-1 max-w-xl items-center rounded-2xl border border-blue-500/30 bg-blue-50/30 px-3.5 py-2 text-xs transition focus-within:border-blue-600 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100"
-                    >
-                        <Search className="mr-2.5 h-4 w-4 shrink-0 text-blue-500" />
-                        <input
-                            type="text"
-                            placeholder="Search for Products, Brands and More"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-transparent text-xs text-gray-800 placeholder-gray-500 outline-none"
-                        />
-                    </form>
+                    {/* Search Bar with Live Suggestions Dropdown (Prominent, matching screenshot) */}
+                    <div className="relative flex-1 max-w-xl">
+                        <form
+                            onSubmit={searchHandler}
+                            className="flex items-center rounded-2xl border border-blue-500/30 bg-blue-50/30 px-3.5 py-2 text-xs transition focus-within:border-blue-600 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100"
+                        >
+                            <Search className="mr-2.5 h-4 w-4 shrink-0 text-blue-500" />
+                            <input
+                                type="text"
+                                placeholder="Search for Products, Brands and More"
+                                value={searchQuery}
+                                onFocus={() => suggestions.products.length > 0 && setShowSuggestions(true)}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-transparent text-xs text-gray-800 placeholder-gray-500 outline-none"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        setShowSuggestions(false);
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
+                            )}
+                        </form>
+
+                        {/* Floating Live Autocomplete Dropdown */}
+                        {showSuggestions && (suggestions.products.length > 0 || suggestions.categories.length > 0) && (
+                            <div className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+                                {/* Categories quick pills */}
+                                {suggestions.categories.length > 0 && (
+                                    <div className="border-b border-gray-100 bg-gray-50/70 px-3 py-2">
+                                        <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">Categories</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {suggestions.categories.map((cat) => (
+                                                <button
+                                                    key={cat}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShowSuggestions(false);
+                                                        setSearchQuery('');
+                                                        navigate(`/shop?category=${encodeURIComponent(cat)}`);
+                                                    }}
+                                                    className="rounded-lg bg-white border border-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-700 hover:border-blue-500 hover:text-blue-600 transition"
+                                                >
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Matching Products */}
+                                <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 p-1">
+                                    {suggestions.products.map((item) => (
+                                        <div
+                                            key={item._id}
+                                            onClick={() => {
+                                                setShowSuggestions(false);
+                                                setSearchQuery('');
+                                                navigate(`/product/${item._id}`);
+                                            }}
+                                            className="flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50/50 cursor-pointer transition"
+                                        >
+                                            <img
+                                                src={item.image}
+                                                alt={item.name}
+                                                className="h-9 w-9 rounded-lg object-contain bg-gray-50 p-0.5 border border-gray-100"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold text-gray-900 truncate">{item.name}</p>
+                                                <p className="text-[10px] text-gray-400">{item.brand || item.category}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-xs font-black text-gray-950">₹{item.price.toLocaleString('en-IN')}</span>
+                                                {item.discountPercent > 0 && (
+                                                    <span className="block text-[9px] font-bold text-emerald-600">
+                                                        {item.discountPercent}% off
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowSuggestions(false);
+                                        navigate(`/shop?keyword=${encodeURIComponent(searchQuery)}`);
+                                    }}
+                                    className="w-full border-t border-gray-100 bg-gray-50/80 py-2 text-center text-xs font-bold text-blue-600 hover:bg-gray-100 transition"
+                                >
+                                    See all results for &ldquo;{searchQuery}&rdquo; →
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Delivery Location Selector (Matching Screenshot) */}
                     <button
@@ -153,8 +268,24 @@ const Navbar = () => {
                         <span>{userCoins}</span>
                     </div>
 
-                    {/* Right Nav Actions: User Account, Wishlist, Cart */}
+                    {/* Right Nav Actions: User Account, Compare, Wishlist, Cart */}
                     <div className="flex items-center gap-2 sm:gap-3">
+                        {/* Compare Icon Button */}
+                        {setIsCompareModalOpen && (
+                            <button
+                                onClick={() => setIsCompareModalOpen(true)}
+                                className="relative flex h-9 w-9 items-center justify-center rounded-xl text-gray-700 transition hover:bg-gray-100 hover:text-blue-600"
+                                title="Compare Products"
+                            >
+                                <Scale className="h-5 w-5" />
+                                {compareItems && compareItems.length > 0 && (
+                                    <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white shadow-sm">
+                                        {compareItems.length}
+                                    </span>
+                                )}
+                            </button>
+                        )}
+
                         {/* Wishlist Icon */}
                         <Link
                             to={user ? '/customer/dashboard?tab=wishlist' : '/login?redirect=customer/dashboard'}

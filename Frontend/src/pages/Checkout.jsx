@@ -22,6 +22,31 @@ const Checkout = () => {
     const [orderSuccess, setOrderSuccess] = useState(false);
     const [placedOrderId, setPlacedOrderId] = useState(null);
 
+    // Read discounts passed from cart
+    const [discountInfo, setDiscountInfo] = useState({
+        coupon: null,
+        couponDiscount: 0,
+        useCoins: false,
+        coinsDiscount: 0,
+    });
+
+    useEffect(() => {
+        try {
+            const saved = sessionStorage.getItem('dropcart_discounts');
+            if (saved) {
+                setDiscountInfo(JSON.parse(saved));
+            }
+        } catch (e) {
+            console.error('Failed to parse discounts in checkout', e);
+        }
+    }, []);
+
+    const couponDiscount = discountInfo.couponDiscount || 0;
+    const coinsDiscount = discountInfo.coinsDiscount || 0;
+    const isFreeDelivery = totalPrice >= 500;
+    const deliveryFee = isFreeDelivery ? 0 : 40;
+    const finalAmount = Math.max(0, totalPrice - couponDiscount - coinsDiscount + deliveryFee);
+
     // Pre-populate customer details from profile if available
     useEffect(() => {
         if (!user) {
@@ -93,12 +118,14 @@ const Checkout = () => {
                     country,
                 },
                 paymentMethod,
-                totalPrice,
+                totalPrice: finalAmount,
             };
 
             const { data } = await axios.post(`${API_BASE_URL}/api/orders`, orderData, config);
 
             clearCart();
+            sessionStorage.removeItem('dropcart_discounts');
+            sessionStorage.removeItem('dropcart_applied_coupon');
             setLoading(false);
             setPlacedOrderId(data._id);
             setOrderSuccess(true);
@@ -299,7 +326,7 @@ const Checkout = () => {
                                     disabled={loading}
                                     className="w-full rounded-2xl bg-orange-500 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-orange-600 disabled:opacity-50"
                                 >
-                                    {loading ? 'Processing Order...' : `Confirm Order • ₹${totalPrice}`}
+                                    {loading ? 'Processing Order...' : `Confirm Order • ₹${finalAmount.toLocaleString('en-IN')}`}
                                 </button>
                             </div>
                         </form>
@@ -319,38 +346,56 @@ const Checkout = () => {
                                         <img
                                             src={item.image}
                                             alt={item.name}
-                                            className="h-12 w-12 rounded-xl object-cover"
+                                            className="h-12 w-12 rounded-xl object-cover bg-gray-50 p-1"
                                         />
                                         <div>
                                             <p className="line-clamp-1 text-xs font-bold text-gray-900">
                                                 {item.name}
                                             </p>
                                             <p className="text-[10px] text-gray-400">
-                                                Qty: {item.qty} × ₹{item.price}
+                                                Qty: {item.qty} × ₹{item.price.toLocaleString('en-IN')}
                                             </p>
                                         </div>
                                     </div>
                                     <p className="text-xs font-black text-gray-900">
-                                        ₹{item.price * item.qty}
+                                        ₹{(item.price * item.qty).toLocaleString('en-IN')}
                                     </p>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="mt-6 border-t border-gray-100 pt-4 space-y-2 text-xs">
+                        <div className="mt-6 border-t border-gray-100 pt-4 space-y-2.5 text-xs">
                             <div className="flex justify-between text-gray-500">
                                 <span>Items Subtotal</span>
-                                <span className="font-bold text-gray-900">₹{totalPrice}</span>
+                                <span className="font-bold text-gray-900">₹{totalPrice.toLocaleString('en-IN')}</span>
                             </div>
+
+                            {couponDiscount > 0 && (
+                                <div className="flex justify-between text-emerald-600 font-bold">
+                                    <span>Coupon ({discountInfo.coupon?.code})</span>
+                                    <span>-₹{couponDiscount.toLocaleString('en-IN')}</span>
+                                </div>
+                            )}
+
+                            {coinsDiscount > 0 && (
+                                <div className="flex justify-between text-amber-600 font-bold">
+                                    <span>SuperCoins Discount</span>
+                                    <span>-₹{coinsDiscount.toLocaleString('en-IN')}</span>
+                                </div>
+                            )}
 
                             <div className="flex justify-between text-gray-500">
                                 <span>Express Delivery</span>
-                                <span className="font-bold text-emerald-600">FREE</span>
+                                {isFreeDelivery ? (
+                                    <span className="font-bold text-emerald-600">FREE</span>
+                                ) : (
+                                    <span className="font-bold text-gray-900">₹{deliveryFee}</span>
+                                )}
                             </div>
 
                             <div className="border-t border-gray-100 pt-3 flex justify-between text-sm">
                                 <span className="font-black text-gray-900">Final Total</span>
-                                <span className="font-black text-orange-600">₹{totalPrice}</span>
+                                <span className="font-black text-orange-600">₹{finalAmount.toLocaleString('en-IN')}</span>
                             </div>
                         </div>
                     </div>
