@@ -16,12 +16,14 @@ import {
     Sparkles,
     Scale,
     Bell,
+    Camera,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { CompareContext } from '../context/CompareContext';
 import { useSocket } from '../context/SocketContext';
+import VisualSearchModal from './VisualSearchModal';
 import { API_BASE_URL } from '../config';
 
 const Navbar = () => {
@@ -34,6 +36,7 @@ const Navbar = () => {
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
+    const [showVisualSearch, setShowVisualSearch] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState({ products: [], categories: [] });
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -177,6 +180,16 @@ const Navbar = () => {
                                     <X className="h-3.5 w-3.5" />
                                 </button>
                             )}
+
+                            {/* AI Visual Search Button */}
+                            <button
+                                type="button"
+                                onClick={() => setShowVisualSearch(true)}
+                                className="ml-1 p-1 text-gray-400 hover:text-amber-600 transition"
+                                title="Visual Search with Image"
+                            >
+                                <Camera className="h-4 w-4" />
+                            </button>
                         </form>
 
                         {/* Floating Live Autocomplete Dropdown */}
@@ -522,6 +535,12 @@ const Navbar = () => {
                     </div>
                 </div>
             )}
+
+            {/* AI Visual Search Modal */}
+            <VisualSearchModal
+                isOpen={showVisualSearch}
+                onClose={() => setShowVisualSearch(false)}
+            />
         </header>
     );
 };

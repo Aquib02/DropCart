@@ -7,6 +7,7 @@ import CategoryBar from '../components/CategoryBar';
 import HeroBannerSlider from '../components/HeroBannerSlider';
 import ProductCard from '../components/ProductCard';
 import RecentlyViewedProducts from '../components/RecentlyViewedProducts';
+import AIPersonalizedRecommendations from '../components/AIPersonalizedRecommendations';
 
 const Home = () => {
     const [products, setProducts] = useState([]);
@@ -171,6 +172,9 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+
+            {/* AI Personalized Recommendations Strip */}
+            <AIPersonalizedRecommendations />
 
             {/* Recently Viewed Products Strip */}
             <RecentlyViewedProducts />
