@@ -1,6 +1,7 @@
 const Order = require('../models/orderModel');
 const Product = require('../models/productModel');
 const User = require('../models/userModel');
+const emailService = require('../utils/emailService');
 
 // @desc    Create new order & decrement stock
 // @route   POST /api/orders
@@ -61,6 +62,13 @@ const addOrderItems = async (req, res) => {
                 createdAt: createdOrder.createdAt
             });
         }
+
+        // Email Notification: Send order confirmation
+        emailService.sendOrderConfirmationEmail({
+            order: createdOrder,
+            customerEmail: req.user.email,
+            customerName: req.user.name
+        });
 
         res.status(201).json(createdOrder);
     } catch (error) {
@@ -185,6 +193,17 @@ const updateOrderStatus = async (req, res) => {
                 status: updatedOrder.status,
                 isPaid: updatedOrder.isPaid,
                 updatedAt: new Date()
+            });
+        }
+
+        // Email Notification: Send order status change update
+        const orderCustomer = await User.findById(updatedOrder.user);
+        if (orderCustomer && orderCustomer.email) {
+            emailService.sendOrderStatusEmail({
+                order: updatedOrder,
+                customerEmail: orderCustomer.email,
+                customerName: orderCustomer.name,
+                newStatus: updatedOrder.status
             });
         }
 

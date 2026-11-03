@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CompareDrawer from './components/CompareDrawer';
 import AIAssistantDrawer from './components/AIAssistantDrawer';
+import ToastNotification from './components/ToastNotification';
 
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -44,6 +45,7 @@ function App() {
                 </main>
                 <CompareDrawer />
                 <AIAssistantDrawer />
+                <ToastNotification />
                 <Footer />
             </div>
         </Router>

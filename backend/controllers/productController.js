@@ -1,4 +1,6 @@
 const Product = require('../models/productModel');
+const PriceAlert = require('../models/priceAlertModel');
+const emailService = require('../utils/emailService');
 
 // @desc    Fetch all products with Search, Category Filter, and Sorting
 // @route   GET /api/products
@@ -337,6 +339,7 @@ const updateProduct = async (req, res) => {
                         image: updatedProduct.image,
                         time: new Date()
                     });
+                    emailService.sendLowStockAlertEmail({ product: updatedProduct });
                 }
                 if (updatedProduct.price < oldPrice) {
                     io.emit('priceDropAlert', {
@@ -346,6 +349,22 @@ const updateProduct = async (req, res) => {
                         oldPrice: oldPrice,
                         discountPercent: updatedProduct.discountPercent
                     });
+
+                    // Trigger target price drop email alerts to subscribers
+                    PriceAlert.find({
+                        product: updatedProduct._id,
+                        targetPrice: { $gte: updatedProduct.price },
+                        isActive: true
+                    }).then(alerts => {
+                        alerts.forEach(alert => {
+                            emailService.sendPriceDropEmail({
+                                product: updatedProduct,
+                                customerEmail: alert.email,
+                                targetPrice: alert.targetPrice,
+                                currentPrice: updatedProduct.price
+                            });
+                        });
+                    }).catch(err => console.warn('Price alert check error:', err.message));
                 }
             }
 

@@ -27,6 +27,7 @@ import AdminCouponsTab from '../components/admin/AdminCouponsTab';
 import AdminCustomersTab from '../components/admin/AdminCustomersTab';
 import AdminReviewsTab from '../components/admin/AdminReviewsTab';
 import { exportOrdersToCSV } from '../utils/exportUtils';
+import { useSocket } from '../context/SocketContext';
 
 const AdminDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -178,6 +179,22 @@ const AdminDashboard = () => {
         fetchAppearance();
         fetchStaff();
     }, [user]);
+
+    // Real-Time Socket.IO: Live orders and stats sync
+    const { socket } = useSocket() || {};
+    useEffect(() => {
+        if (!socket) return;
+        const onRealtimeUpdate = () => {
+            fetchOrders();
+            fetchStats();
+        };
+        socket.on('newOrderPlaced', onRealtimeUpdate);
+        socket.on('orderStatusUpdated', onRealtimeUpdate);
+        return () => {
+            socket.off('newOrderPlaced', onRealtimeUpdate);
+            socket.off('orderStatusUpdated', onRealtimeUpdate);
+        };
+    }, [socket]);
 
     // Permission check helper
     const can = (permission) => {

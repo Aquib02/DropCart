@@ -16,6 +16,7 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
+import { useSocket } from '../context/SocketContext';
 import { API_BASE_URL } from '../config';
 
 const CustomerDashboard = () => {
@@ -89,6 +90,25 @@ const CustomerDashboard = () => {
         fetchOrders();
         fetchProfile();
     }, [user]);
+
+    // Real-Time Socket.IO: Live order status update listener
+    const { socket } = useSocket() || {};
+    useEffect(() => {
+        if (!socket) return;
+        const handleOrderUpdate = (data) => {
+            setOrders((prev) =>
+                prev.map((order) =>
+                    order._id === data.orderId
+                        ? { ...order, status: data.status, isPaid: data.isPaid !== undefined ? data.isPaid : order.isPaid }
+                        : order
+                )
+            );
+        };
+        socket.on('orderStatusUpdated', handleOrderUpdate);
+        return () => {
+            socket.off('orderStatusUpdated', handleOrderUpdate);
+        };
+    }, [socket]);
 
     const handleProfileSubmit = async (e) => {
         e.preventDefault();
