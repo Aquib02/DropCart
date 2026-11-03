@@ -412,6 +412,64 @@ const createProductReview = async (req, res) => {
     }
 };
 
+// @desc    Get all product reviews across catalog (Admin Moderation)
+// @route   GET /api/products/reviews/all
+// @access  Private / Admin
+const getAllReviews = async (req, res) => {
+    try {
+        const products = await Product.find({ 'reviews.0': { $exists: true } }).select(
+            '_id name image category reviews'
+        );
+        const reviews = [];
+        products.forEach((p) => {
+            p.reviews.forEach((r) => {
+                reviews.push({
+                    _id: r._id,
+                    productId: p._id,
+                    productName: p.name,
+                    productImage: p.image,
+                    category: p.category,
+                    user: r.user,
+                    name: r.name,
+                    rating: r.rating,
+                    comment: r.comment,
+                    createdAt: r.createdAt,
+                });
+            });
+        });
+        reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        res.json(reviews);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Delete a customer review (Admin Moderation)
+// @route   DELETE /api/products/:productId/reviews/:reviewId
+// @access  Private / Admin
+const deleteProductReview = async (req, res) => {
+    try {
+        const { productId, reviewId } = req.params;
+        const product = await Product.findById(productId);
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        product.reviews = product.reviews.filter((r) => r._id.toString() !== reviewId);
+        product.numReviews = product.reviews.length;
+        product.rating =
+            product.reviews.length > 0
+                ? product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length
+                : 0;
+
+        await product.save();
+        res.json({ message: 'Review removed successfully', product });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getProduct,
     getSuggestions,
@@ -424,4 +482,6 @@ module.exports = {
     createProduct,
     toggleProductStock,
     createProductReview,
+    getAllReviews,
+    deleteProductReview,
 };

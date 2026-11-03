@@ -110,54 +110,77 @@ const getOrders = async (req, res) => {
     }
 };
 
-// @desc    Update order status (Pending -> Processing -> Shipped -> Delivered)
+// @desc    Update order status (Pending -> Processing -> Shipped -> Delivered -> Cancelled / Returned)
 // @route   PUT /api/orders/:id/status
 // @access  Private / Admin or Staff with manage_orders
 const updateOrderStatus = async (req, res) => {
     try {
-        // Fixed: Use req.params.id (not req.params._id)
         const order = await Order.findById(req.params.id);
 
-        if (order) {
-            const { status, isPaid } = req.body;
-            if (status) {
-                order.status = status;
-                if (status === 'Delivered') {
-                    order.deliveredAt = Date.now();
-                    order.isPaid = true;
-                    order.paidAt = order.paidAt || Date.now();
-                }
-            }
-
-            if (isPaid !== undefined) {
-                order.isPaid = Boolean(isPaid);
-                if (order.isPaid && !order.paidAt) {
-                    order.paidAt = Date.now();
-                }
-            }
-
-            const updatedOrder = await order.save();
-            res.json(updatedOrder);
-        } else {
-            res.status(404).json({ message: 'Order not found' });
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
         }
+
+        const { status, isPaid } = req.body;
+
+        if (status) {
+            // If cancelling or returning, restock items back into inventory
+            if (
+                (status === 'Cancelled' || status === 'Returned') &&
+                order.status !== 'Cancelled' &&
+                order.status !== 'Returned'
+            ) {
+                for (const item of order.orderItems) {
+                    const prod = await Product.findById(item.product);
+                    if (prod) {
+                        prod.countInStock += item.qty;
+                        if (prod.countInStock > 0) {
+                            prod.isOutOfStock = false;
+                        }
+                        await prod.save();
+                    }
+                }
+            }
+
+            order.status = status;
+            if (status === 'Delivered') {
+                order.deliveredAt = Date.now();
+                order.isPaid = true;
+                order.paidAt = order.paidAt || Date.now();
+            }
+        }
+
+        if (isPaid !== undefined) {
+            order.isPaid = Boolean(isPaid);
+            if (order.isPaid && !order.paidAt) {
+                order.paidAt = Date.now();
+            }
+        }
+
+        const updatedOrder = await order.save();
+        res.json(updatedOrder);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// @desc    Get Dashboard Statistics (Sales, Orders, Products, Low Stock)
+// @desc    Get Comprehensive Dashboard Statistics & Charts
 // @route   GET /api/orders/stats
 // @access  Private / Admin or Staff
 const getOrderStats = async (req, res) => {
     try {
         const totalOrders = await Order.countDocuments({});
         const pendingOrders = await Order.countDocuments({ status: 'Pending' });
-        const orders = await Order.find({ status: { $ne: 'Cancelled' } });
-        const totalRevenue = orders.reduce((acc, order) => acc + (order.totalPrice || 0), 0);
+        const processingOrders = await Order.countDocuments({ status: 'Processing' });
+        const shippedOrders = await Order.countDocuments({ status: 'Shipped' });
+        const deliveredOrders = await Order.countDocuments({ status: 'Delivered' });
+        const cancelledOrders = await Order.countDocuments({ status: { $in: ['Cancelled', 'Returned'] } });
+
+        const nonCancelledOrders = await Order.find({ status: { $nin: ['Cancelled', 'Returned'] } });
+        const totalRevenue = nonCancelledOrders.reduce((acc, order) => acc + (order.totalPrice || 0), 0);
 
         const totalProducts = await Product.countDocuments({});
-        const lowStockProducts = await Product.countDocuments({ countInStock: { $lte: 5 } });
+        const lowStockProducts = await Product.find({ countInStock: { $lte: 5 } }).select('name image price countInStock isOutOfStock category brand');
         const outOfStockProducts = await Product.countDocuments({
             $or: [{ countInStock: 0 }, { isOutOfStock: true }],
         });
@@ -168,18 +191,107 @@ const getOrderStats = async (req, res) => {
         const recentOrders = await Order.find({})
             .populate('user', 'name email')
             .sort({ createdAt: -1 })
-            .limit(5);
+            .limit(8);
+
+        // 1. Weekly Sales Trend (Last 7 days)
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const weeklySales = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            d.setHours(0, 0, 0, 0);
+
+            const nextD = new Date(d);
+            nextD.setDate(nextD.getDate() + 1);
+
+            const dayOrders = nonCancelledOrders.filter((o) => {
+                const orderDate = new Date(o.createdAt);
+                return orderDate >= d && orderDate < nextD;
+            });
+
+            const dayRevenue = dayOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+            weeklySales.push({
+                day: dayNames[d.getDay()],
+                date: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+                revenue: dayRevenue,
+                orders: dayOrders.length,
+            });
+        }
+
+        // 2. Monthly Trend (Last 6 months)
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthlySales = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const m = d.getMonth();
+            const y = d.getFullYear();
+
+            const monthOrders = nonCancelledOrders.filter((o) => {
+                const od = new Date(o.createdAt);
+                return od.getMonth() === m && od.getFullYear() === y;
+            });
+
+            const mRevenue = monthOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+            monthlySales.push({
+                month: monthNames[m],
+                year: y,
+                revenue: mRevenue,
+                orders: monthOrders.length,
+            });
+        }
+
+        // 3. Category Sales Distribution
+        const categoryMap = {};
+        nonCancelledOrders.forEach((order) => {
+            order.orderItems.forEach((item) => {
+                const cat = item.category || 'General';
+                categoryMap[cat] = (categoryMap[cat] || 0) + (item.price * item.qty);
+            });
+        });
+
+        // 4. Top Selling Products
+        const productSalesMap = {};
+        nonCancelledOrders.forEach((order) => {
+            order.orderItems.forEach((item) => {
+                const pId = item.product ? item.product.toString() : item.name;
+                if (!productSalesMap[pId]) {
+                    productSalesMap[pId] = {
+                        name: item.name,
+                        image: item.image,
+                        price: item.price,
+                        unitsSold: 0,
+                        revenue: 0,
+                    };
+                }
+                productSalesMap[pId].unitsSold += item.qty;
+                productSalesMap[pId].revenue += item.price * item.qty;
+            });
+        });
+
+        const topProducts = Object.values(productSalesMap)
+            .sort((a, b) => b.unitsSold - a.unitsSold)
+            .slice(0, 5);
 
         res.json({
             totalRevenue: Math.round(totalRevenue * 100) / 100,
             totalOrders,
             pendingOrders,
+            processingOrders,
+            shippedOrders,
+            deliveredOrders,
+            cancelledOrders,
             totalProducts,
+            lowStockCount: lowStockProducts.length,
             lowStockProducts,
             outOfStockProducts,
             totalUsers,
             totalStaff,
             recentOrders,
+            weeklySales,
+            monthlySales,
+            categorySales: categoryMap,
+            topProducts,
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

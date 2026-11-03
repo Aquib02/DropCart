@@ -12,6 +12,8 @@ const {
     createProduct,
     toggleProductStock,
     createProductReview,
+    getAllReviews,
+    deleteProductReview,
 } = require('../controllers/productController');
 
 const { protect, hasPermission } = require('../middleware/authMiddleware');
@@ -21,6 +23,10 @@ router.route('/').get(getProduct).post(protect, hasPermission('manage_products')
 router.get('/suggestions', getSuggestions);
 router.get('/categories', getCategories);
 router.post('/compare', compareProducts);
+
+// Admin review moderation routes
+router.get('/reviews/all', protect, hasPermission('manage_products'), getAllReviews);
+router.delete('/:productId/reviews/:reviewId', protect, hasPermission('manage_products'), deleteProductReview);
 
 // Specific product routes
 router

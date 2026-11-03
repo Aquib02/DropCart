@@ -15,9 +15,18 @@ import {
     Shield,
     X,
     RefreshCw,
+    Download,
+    Tag,
+    MessageSquare,
+    AlertCircle,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
+import AdminAnalyticsCharts from '../components/admin/AdminAnalyticsCharts';
+import AdminCouponsTab from '../components/admin/AdminCouponsTab';
+import AdminCustomersTab from '../components/admin/AdminCustomersTab';
+import AdminReviewsTab from '../components/admin/AdminReviewsTab';
+import { exportOrdersToCSV } from '../utils/exportUtils';
 
 const AdminDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -436,6 +445,45 @@ const AdminDashboard = () => {
                                 </button>
                             )}
 
+                            {/* Coupons & Promotions Tab */}
+                            <button
+                                onClick={() => setActiveTab('coupons')}
+                                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+                                    activeTab === 'coupons'
+                                        ? 'bg-orange-500 text-white shadow-md'
+                                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                                }`}
+                            >
+                                <Tag className="h-4 w-4" />
+                                Coupons & Deals
+                            </button>
+
+                            {/* Customer Directory Tab */}
+                            <button
+                                onClick={() => setActiveTab('customers')}
+                                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+                                    activeTab === 'customers'
+                                        ? 'bg-orange-500 text-white shadow-md'
+                                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                                }`}
+                            >
+                                <Users className="h-4 w-4" />
+                                Customers
+                            </button>
+
+                            {/* Customer Reviews Moderation Tab */}
+                            <button
+                                onClick={() => setActiveTab('reviews')}
+                                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+                                    activeTab === 'reviews'
+                                        ? 'bg-orange-500 text-white shadow-md'
+                                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                                }`}
+                            >
+                                <MessageSquare className="h-4 w-4" />
+                                Reviews
+                            </button>
+
                             {can('manage_appearance') && (
                                 <button
                                     onClick={() => setActiveTab('appearance')}
@@ -459,7 +507,7 @@ const AdminDashboard = () => {
                                             : 'bg-white/5 text-gray-300 hover:bg-white/10'
                                     }`}
                                 >
-                                    <Users className="h-4 w-4" />
+                                    <Shield className="h-4 w-4" />
                                     Staff & Roles
                                 </button>
                             )}
@@ -681,6 +729,9 @@ const AdminDashboard = () => {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Interactive Sales Analytics & Revenue Trends Charts */}
+                                <AdminAnalyticsCharts stats={stats} />
                             </>
                         )}
                     </div>
@@ -777,7 +828,7 @@ const AdminDashboard = () => {
                                                 </td>
 
                                                 <td className="p-4">
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1.5">
                                                         <button
                                                             onClick={() => handleAdjustStock(p, -1)}
                                                             className="flex h-6 w-6 items-center justify-center rounded-lg border border-gray-200 font-bold hover:bg-gray-100"
@@ -795,6 +846,18 @@ const AdminDashboard = () => {
                                                         >
                                                             +
                                                         </button>
+                                                        <button
+                                                            onClick={() => handleAdjustStock(p, 10)}
+                                                            className="rounded-lg bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-black text-emerald-700 hover:bg-emerald-100 transition"
+                                                            title="Quick restock +10 units"
+                                                        >
+                                                            +10
+                                                        </button>
+                                                        {p.countInStock <= 5 && !isOutOfStock && (
+                                                            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-black text-amber-800">
+                                                                Low
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </td>
 
@@ -870,21 +933,32 @@ const AdminDashboard = () => {
                                 </p>
                             </div>
 
-                            {/* Status Filter Chips */}
-                            <div className="flex flex-wrap gap-1.5">
-                                {['All', 'Pending', 'Processing', 'Shipped', 'Delivered'].map((status) => (
-                                    <button
-                                        key={status}
-                                        onClick={() => setOrderStatusFilter(status)}
-                                        className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-                                            orderStatusFilter === status
-                                                ? 'bg-orange-500 text-white'
-                                                : 'bg-white text-gray-600 hover:bg-gray-100'
-                                        }`}
-                                    >
-                                        {status}
-                                    </button>
-                                ))}
+                            {/* Status Filter Chips and CSV Export */}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex flex-wrap gap-1.5">
+                                    {['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map((status) => (
+                                        <button
+                                            key={status}
+                                            onClick={() => setOrderStatusFilter(status)}
+                                            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                                                orderStatusFilter === status
+                                                    ? 'bg-orange-500 text-white'
+                                                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-100'
+                                            }`}
+                                        >
+                                            {status}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <button
+                                    onClick={() => exportOrdersToCSV(orders)}
+                                    className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-bold text-gray-800 hover:border-emerald-500 hover:text-emerald-700 transition shadow-2xs"
+                                    title="Download orders report in CSV format"
+                                >
+                                    <Download className="h-3.5 w-3.5 text-emerald-600" />
+                                    <span>Export CSV</span>
+                                </button>
                             </div>
                         </div>
 
@@ -935,6 +1009,7 @@ const AdminDashboard = () => {
                                                     <option value="Shipped">Shipped</option>
                                                     <option value="Delivered">Delivered</option>
                                                     <option value="Cancelled">Cancelled</option>
+                                                    <option value="Returned">Returned</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -1237,6 +1312,15 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 )}
+
+                {/* TAB: PROMOTIONAL COUPONS & CAMPAIGNS */}
+                {activeTab === 'coupons' && <AdminCouponsTab userToken={user.token} />}
+
+                {/* TAB: REGISTERED CUSTOMERS DIRECTORY */}
+                {activeTab === 'customers' && <AdminCustomersTab userToken={user.token} />}
+
+                {/* TAB: CUSTOMER REVIEWS MODERATION */}
+                {activeTab === 'reviews' && <AdminReviewsTab userToken={user.token} />}
 
                 {/* MODAL: ADD / EDIT PRODUCT */}
                 {showAddProductModal && (
