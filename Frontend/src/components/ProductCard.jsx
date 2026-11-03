@@ -76,6 +76,7 @@ const ProductCard = ({ product }) => {
                 {/* Wishlist Heart Button */}
                 <button
                     onClick={handleWishlistClick}
+                    aria-label={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
                     className={`absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-all duration-200 ${
                         isWishlisted
                             ? 'bg-rose-500 text-white'
@@ -98,6 +99,7 @@ const ProductCard = ({ product }) => {
                                 addToCompare(product);
                             }
                         }}
+                        aria-label={isCompared ? 'Remove from Compare' : 'Add to Compare'}
                         className={`absolute right-2.5 top-12 flex h-8 w-8 items-center justify-center rounded-full shadow-md transition-all duration-200 ${
                             isCompared
                                 ? 'bg-blue-600 text-white'

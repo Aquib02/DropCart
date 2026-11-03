@@ -4,6 +4,8 @@ import axios from 'axios';
 import { Search, SlidersHorizontal, X, Sparkles } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 import ProductCard from '../components/ProductCard';
+import { ProductGridSkeleton } from '../components/SkeletonLoader';
+import EmptyState from '../components/EmptyState';
 
 const Shop = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -268,39 +270,13 @@ const Shop = () => {
 
                 {/* Products Grid */}
                 {loading ? (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                        {[...Array(10)].map((_, index) => (
-                            <div
-                                key={index}
-                                className="animate-pulse overflow-hidden rounded-2xl border border-gray-200 bg-white"
-                            >
-                                <div className="aspect-square bg-gray-200" />
-                                <div className="space-y-2.5 p-4">
-                                    <div className="h-3 w-1/3 rounded bg-gray-200" />
-                                    <div className="h-4 w-4/5 rounded bg-gray-200" />
-                                    <div className="h-5 w-1/3 rounded bg-gray-200" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <ProductGridSkeleton count={10} />
                 ) : products.length === 0 ? (
-                    <div className="rounded-3xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 text-2xl">
-                            🔍
-                        </div>
-                        <h3 className="mt-4 text-base font-black text-gray-900">
-                            No products match your search
-                        </h3>
-                        <p className="mx-auto mt-1 max-w-sm text-xs text-gray-500">
-                            Try adjusting your search terms or clearing your category filters to view more items.
-                        </p>
-                        <button
-                            onClick={resetFilters}
-                            className="mt-5 rounded-xl bg-orange-500 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600"
-                        >
-                            Reset All Filters
-                        </button>
-                    </div>
+                    <EmptyState
+                        type="no-products"
+                        onAction={resetFilters}
+                        actionText="Reset All Filters"
+                    />
                 ) : (
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                         {products.map((product) => (

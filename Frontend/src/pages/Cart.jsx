@@ -13,6 +13,7 @@ import {
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
+import EmptyState from '../components/EmptyState';
 
 const Cart = () => {
     const couponInputId = useId();
@@ -146,22 +147,11 @@ const Cart = () => {
                 </div>
 
                 {cartItems.length === 0 ? (
-                    /* Empty Cart State */
-                    <div className="rounded-3xl border border-gray-200/80 bg-white p-12 text-center shadow-sm">
-                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-50 text-4xl">
-                            🛍️
-                        </div>
-                        <h2 className="mt-5 text-xl font-black text-gray-900">Your Cart is Empty!</h2>
-                        <p className="mt-2 text-xs text-gray-500 max-w-sm mx-auto">
-                            Looks like you haven&apos;t added any festive deals to your bag yet. Explore our top categories and start shopping!
-                        </p>
-                        <Link
-                            to="/shop"
-                            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md hover:bg-orange-600 transition"
-                        >
-                            Explore Big Bang Deals →
-                        </Link>
-                    </div>
+                    <EmptyState
+                        type="empty-cart"
+                        actionText="Explore Big Bang Deals →"
+                        actionLink="/shop"
+                    />
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                         {/* LEFT COLUMN: Cart Items & Free Shipping Progress (8 cols) */}

@@ -18,6 +18,8 @@ import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { useSocket } from '../context/SocketContext';
 import { API_BASE_URL } from '../config';
+import { OrderCardSkeleton } from '../components/SkeletonLoader';
+import EmptyState from '../components/EmptyState';
 
 const CustomerDashboard = () => {
     const { user, updateUser } = useContext(AuthContext);
@@ -290,30 +292,16 @@ const CustomerDashboard = () => {
                         </div>
 
                         {loadingOrders ? (
-                            <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-orange-500" />
-                                <p className="mt-4 text-xs font-bold text-gray-500">
-                                    Loading your shipments...
-                                </p>
+                            <div className="space-y-4">
+                                <OrderCardSkeleton />
+                                <OrderCardSkeleton />
                             </div>
                         ) : orders.length === 0 ? (
-                            <div className="rounded-3xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-                                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-3xl">
-                                    📦
-                                </div>
-                                <h3 className="mt-4 text-lg font-black text-gray-900">
-                                    No Orders Placed Yet
-                                </h3>
-                                <p className="mx-auto mt-2 max-w-sm text-xs text-gray-500">
-                                    You have not placed any orders yet. Browse our collections and discover something you love!
-                                </p>
-                                <Link
-                                    to="/shop"
-                                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600"
-                                >
-                                    Browse Products
-                                </Link>
-                            </div>
+                            <EmptyState
+                                type="empty-orders"
+                                actionText="Explore Festival Deals →"
+                                actionLink="/shop"
+                            />
                         ) : (
                             <div className="space-y-6">
                                 {orders.map((order) => {
@@ -479,23 +467,11 @@ const CustomerDashboard = () => {
                         </div>
 
                         {wishlist.length === 0 ? (
-                            <div className="rounded-3xl border border-gray-200 bg-white p-12 text-center shadow-sm">
-                                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rose-50 text-3xl">
-                                    ❤️
-                                </div>
-                                <h3 className="mt-4 text-lg font-black text-gray-900">
-                                    Your Wishlist is Empty
-                                </h3>
-                                <p className="mx-auto mt-2 max-w-sm text-xs text-gray-500">
-                                    Save your favorite items by tapping the heart icon on any product in our shop!
-                                </p>
-                                <Link
-                                    to="/shop"
-                                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600"
-                                >
-                                    Explore Products
-                                </Link>
-                            </div>
+                            <EmptyState
+                                type="empty-wishlist"
+                                actionText="Explore Trending Items →"
+                                actionLink="/shop"
+                            />
                         ) : (
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                 {wishlist.map((item) => {
