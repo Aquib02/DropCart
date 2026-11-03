@@ -21,7 +21,7 @@ const Login = () => {
             if (userInfo && userInfo.isAdmin) {
                 navigate('/admin/dashboard');
             } else {
-                navigate('/');
+                navigate(redirect);
             }
         } else {
             setError(result.message);

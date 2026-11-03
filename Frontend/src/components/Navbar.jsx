@@ -25,7 +25,6 @@ const Navbar = () => {
     const { totalCount } = useContext(CartContext);
     const { wishlistCount } = useContext(WishlistContext);
     const navigate = useNavigate();
-    const location = useLocation();
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
