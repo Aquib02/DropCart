@@ -1,129 +1,618 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
+
 const User = require('./models/userModel');
 const Product = require('./models/productModel');
+const Order = require('./models/orderModel');
 const StoreSettings = require('./models/storeSettingsModel');
 
 dotenv.config();
 
-const sampleProducts = [
+// 24 Detailed Flipkart-style Products
+const dummyProducts = [
+    // --- MOBILES ---
     {
-        name: 'Wireless Noise Canceling Headphones',
-        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
-        description: 'Immersive sound with industry-leading active noise canceling and 30-hour battery life.',
-        category: 'Electronics',
-        price: 2999,
+        name: 'SAMSUNG Galaxy F70e 5G (Starlight Blue, 128 GB)',
+        brand: 'Samsung',
+        image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=80',
+        description: '6.7 inch Super AMOLED Display, 50MP OIS Dual Camera, 6000mAh Battery with 25W Fast Charging.',
+        category: 'Mobiles',
+        price: 15999,
+        originalPrice: 21999,
+        discountPercent: 27,
         countInStock: 25,
-        rating: 4.8,
-        numReviews: 12,
+        rating: 4.4,
+        numReviews: 2450,
+        isFeatured: true,
+        tag: 'Big Bang Deal',
     },
     {
-        name: 'Smart Fitness Tracker Watch',
+        name: 'Apple iPhone 15 (Black, 128 GB)',
+        brand: 'Apple',
+        image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80',
+        description: 'Dynamic Island, 48MP Main Camera with 2x Telephoto, All-day battery life, and Durable color-infused glass.',
+        category: 'Mobiles',
+        price: 65999,
+        originalPrice: 79900,
+        discountPercent: 17,
+        countInStock: 18,
+        rating: 4.8,
+        numReviews: 8900,
+        isFeatured: true,
+        tag: 'Bestseller',
+    },
+    {
+        name: 'Mivi One 5G Smartphone (Glacier Mint, 128 GB)',
+        brand: 'Mivi',
+        image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&q=80',
+        description: 'Next-gen 5G connectivity, 120Hz Ultra Smooth Display, 50MP AI Portrait Camera, and sleek frosted finish.',
+        category: 'Mobiles',
+        price: 11999,
+        originalPrice: 16999,
+        discountPercent: 29,
+        countInStock: 35,
+        rating: 4.2,
+        numReviews: 1120,
+        isFeatured: true,
+        tag: 'Trending Now',
+    },
+    {
+        name: 'OnePlus Nord CE 4 5G (Dark Chrome, 256 GB)',
+        brand: 'OnePlus',
+        image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&q=80',
+        description: 'Snapdragon 7 Gen 3, 100W SUPERVOOC Fast Charging, 5500 mAh battery, and Sony LYT-600 Camera sensor.',
+        category: 'Mobiles',
+        price: 24999,
+        originalPrice: 28999,
+        discountPercent: 13,
+        countInStock: 14,
+        rating: 4.5,
+        numReviews: 3410,
+        isFeatured: true,
+        tag: 'Top Rated',
+    },
+
+    // --- ELECTRONICS & LAPTOPS ---
+    {
+        name: 'Acer Swift Neo AI Intel Core Ultra 5 Thin & Light Laptop',
+        brand: 'Acer',
+        image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80',
+        description: 'Intel Core Ultra 5 AI processor, 16GB LPDDR5X RAM, 512GB SSD, 14 inch 2.8K OLED Display with Intel Arc graphics.',
+        category: 'Electronics',
+        price: 47990,
+        originalPrice: 68990,
+        discountPercent: 30,
+        countInStock: 12,
+        rating: 4.6,
+        numReviews: 412,
+        isFeatured: true,
+        tag: 'AI Powered',
+    },
+    {
+        name: 'Sony WH-1000XM5 Wireless Active Noise Canceling Headphones',
+        brand: 'Sony',
+        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
+        description: 'Industry-leading noise cancellation with two processors and 8 microphones, 30 hours battery, ultra-clear hands-free calls.',
+        category: 'Electronics',
+        price: 26990,
+        originalPrice: 34990,
+        discountPercent: 22,
+        countInStock: 20,
+        rating: 4.9,
+        numReviews: 1850,
+        isFeatured: true,
+        tag: 'Premium Audio',
+    },
+    {
+        name: 'boAt Airdopes 141 Bluetooth TWS Earbuds with 42H Playtime',
+        brand: 'boAt',
+        image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&q=80',
+        description: 'ENx environmental noise cancellation technology, ASAP fast charge, IPX4 sweat resistance, Beast mode for gaming.',
+        category: 'Electronics',
+        price: 1299,
+        originalPrice: 4490,
+        discountPercent: 71,
+        countInStock: 50,
+        rating: 4.3,
+        numReviews: 14200,
+        isFeatured: false,
+        tag: 'Mega Deal',
+    },
+    {
+        name: 'Fire-Boltt Smart Fitness Watch with Bluetooth Calling & SpO2',
+        brand: 'Fire-Boltt',
         image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80',
-        description: 'Track your heart rate, sleep metrics, daily workouts, and receive instant phone notifications.',
+        description: '1.83 inch HD full touch display, 120+ sports modes, voice assistant support, and comprehensive sleep/heart monitoring.',
         category: 'Electronics',
         price: 1899,
-        countInStock: 15,
-        rating: 4.6,
-        numReviews: 8,
+        originalPrice: 5999,
+        discountPercent: 68,
+        countInStock: 30,
+        rating: 4.4,
+        numReviews: 5310,
+        isFeatured: true,
+        tag: 'Top Pick',
+    },
+
+    // --- HOME & LIVING ---
+    {
+        name: 'Monte Carlo Soft Warm Microfiber Double Bed Blanket (Floral Navy)',
+        brand: 'Monte Carlo',
+        image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=800&q=80',
+        description: 'Heavy winter reversible mink blanket with ultra-soft plush feel, hypo-allergenic microfiber, and winter durability.',
+        category: 'Home',
+        price: 1699,
+        originalPrice: 4299,
+        discountPercent: 60,
+        countInStock: 22,
+        rating: 4.7,
+        numReviews: 3120,
+        isFeatured: true,
+        tag: 'Up to 60% Off',
     },
     {
-        name: 'Premium Leather Everyday Backpack',
-        image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80',
-        description: 'Handcrafted durable leather with dedicated padded 15-inch laptop compartment and weather resistance.',
+        name: 'Signature Geometric Embossed Queen Quilt Comforter',
+        brand: 'Signature',
+        image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
+        description: 'Lightweight microfiber quilt designed for AC and mild winters, machine washable, breathability certified.',
+        category: 'Home',
+        price: 1299,
+        originalPrice: 2999,
+        discountPercent: 56,
+        countInStock: 19,
+        rating: 4.5,
+        numReviews: 980,
+        isFeatured: false,
+        tag: 'Winter Special',
+    },
+    {
+        name: 'Solimo 100% Pure Cotton 144 TC Double Bed Sheet with 2 Pillow Covers',
+        brand: 'Solimo',
+        image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80',
+        description: 'Breathable, fade-resistant color fastness, soft cotton fabric that provides year-round comfortable sleep.',
+        category: 'Home',
+        price: 699,
+        originalPrice: 1499,
+        discountPercent: 53,
+        countInStock: 40,
+        rating: 4.3,
+        numReviews: 4500,
+        isFeatured: false,
+        tag: 'Everyday Essential',
+    },
+
+    // --- FASHION ---
+    {
+        name: "Puma Unisex-Adult Flyer Flex Running Shoes (Black & White)",
+        brand: 'Puma',
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80',
+        description: 'Breathable mesh upper with bold PUMA branding, flexible EVA midsole cushioning, and rubber outsole grip.',
+        category: 'Fashion',
+        price: 2299,
+        originalPrice: 4999,
+        discountPercent: 54,
+        countInStock: 28,
+        rating: 4.6,
+        numReviews: 6150,
+        isFeatured: true,
+        tag: 'Bestseller',
+    },
+    {
+        name: "Men's Premium Washed Denim Jacket with Dual Flap Pockets",
+        brand: 'Roadster',
+        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&q=80',
+        description: '100% Cotton durable rigid denim with metal buttons, spread collar, and tailored classic street style fit.',
         category: 'Fashion',
         price: 1499,
-        countInStock: 10,
-        rating: 4.9,
-        numReviews: 15,
-    },
-    {
-        name: 'RGB Mechanical Gaming Keyboard',
-        image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&q=80',
-        description: 'Tactile mechanical switches, customizable per-key RGB backlighting, and aluminum frame.',
-        category: 'Electronics',
-        price: 2199,
-        countInStock: 8,
-        rating: 4.7,
-        numReviews: 9,
-    },
-    {
-        name: 'Classic Minimalist Chrono Watch',
-        image: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=800&q=80',
-        description: 'Ultra-thin Japanese quartz movement with sapphire crystal glass and genuine leather strap.',
-        category: 'Fashion',
-        price: 3499,
-        countInStock: 12,
-        rating: 5.0,
-        numReviews: 6,
-    },
-    {
-        name: 'Ergonomic Memory Foam Travel Pillow',
-        image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=800&q=80',
-        description: 'High-density memory foam providing 360-degree neck support for long travels and desk comfort.',
-        category: 'Home & Living',
-        price: 799,
-        countInStock: 30,
+        originalPrice: 3499,
+        discountPercent: 57,
+        countInStock: 16,
         rating: 4.5,
-        numReviews: 14,
+        numReviews: 1280,
+        isFeatured: false,
+        tag: 'Trending Style',
+    },
+    {
+        name: 'Handcrafted Genuine Leather Everyday Laptop Backpack',
+        brand: 'Wildcraft',
+        image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80',
+        description: 'Padded laptop sleeve for 15.6 inch laptops, brass buckles, water-resistant exterior, and reinforced shoulder straps.',
+        category: 'Fashion',
+        price: 1899,
+        originalPrice: 4599,
+        discountPercent: 58,
+        countInStock: 14,
+        rating: 4.8,
+        numReviews: 890,
+        isFeatured: true,
+        tag: 'Top Pick',
+    },
+
+    // --- APPLIANCES ---
+    {
+        name: 'Philips Digital Air Fryer with Rapid Air Tech (4.1 Litre)',
+        brand: 'Philips',
+        image: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&q=80',
+        description: 'Cook with up to 90% less fat. Fry, bake, grill, and reheat with convenient digital touchscreen preset menus.',
+        category: 'Appliances',
+        price: 6499,
+        originalPrice: 11995,
+        discountPercent: 45,
+        countInStock: 15,
+        rating: 4.7,
+        numReviews: 2980,
+        isFeatured: true,
+        tag: 'Kitchen Essential',
+    },
+    {
+        name: 'Bajaj Rex 750W Mixer Grinder with 3 Stainless Steel Jars',
+        brand: 'Bajaj',
+        image: 'https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=800&q=80',
+        description: 'Heavy duty 750 Watt copper motor with multi-function blade system and overload protection indicator.',
+        category: 'Appliances',
+        price: 3299,
+        originalPrice: 5850,
+        discountPercent: 43,
+        countInStock: 25,
+        rating: 4.4,
+        numReviews: 5400,
+        isFeatured: false,
+        tag: 'Trusted Choice',
+    },
+
+    // --- BEAUTY ---
+    {
+        name: 'Minimalist 10% Niacinamide Face Serum with Zinc (30 ml)',
+        brand: 'Minimalist',
+        image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800&q=80',
+        description: 'Nourishing daily serum to fade dark spots, balance excess sebum, and strengthen the natural skin barrier.',
+        category: 'Beauty',
+        price: 599,
+        originalPrice: 699,
+        discountPercent: 14,
+        countInStock: 45,
+        rating: 4.6,
+        numReviews: 7600,
+        isFeatured: false,
+        tag: 'Skincare Favorite',
+    },
+
+    // --- SPORTS & FITNESS ---
+    {
+        name: 'Boldfit 20kg Rubber Coated Home Workout Dumbbell Set',
+        brand: 'Boldfit',
+        image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&q=80',
+        description: 'Durable anti-roll rubber coated weight plates with solid steel connecting rods and foam padded barbell connector.',
+        category: 'Sports & Fitness',
+        price: 1899,
+        originalPrice: 4999,
+        discountPercent: 62,
+        countInStock: 20,
+        rating: 4.5,
+        numReviews: 1840,
+        isFeatured: true,
+        tag: 'Fitness Deal',
+    },
+
+    // --- FURNITURE ---
+    {
+        name: 'Green Soul Ergonomic High-Back Executive Office Chair',
+        brand: 'Green Soul',
+        image: 'https://images.unsplash.com/photo-1580481077195-c3a821a506cb?w=800&q=80',
+        description: 'Breathable dual-mesh backrest, 2D adjustable armrests, pneumatic seat height adjustment, and heavy-duty nylon base.',
+        category: 'Furniture',
+        price: 7999,
+        originalPrice: 14990,
+        discountPercent: 46,
+        countInStock: 10,
+        rating: 4.8,
+        numReviews: 2150,
+        isFeatured: true,
+        tag: 'Work from Home',
+    },
+
+    // --- BOOKS ---
+    {
+        name: 'Atomic Habits: Tiny Changes, Remarkable Results by James Clear',
+        brand: 'Penguin',
+        image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&q=80',
+        description: 'The definitive guide to breaking bad habits and building good ones with actionable psychological frameworks.',
+        category: 'Books',
+        price: 499,
+        originalPrice: 799,
+        discountPercent: 37,
+        countInStock: 60,
+        rating: 4.9,
+        numReviews: 21000,
+        isFeatured: false,
+        tag: '#1 Bestseller',
     },
 ];
 
-const seedData = async () => {
+// Promotional Banners (Matching Flipkart Style in User Screenshot)
+const promotionalBanners = [
+    {
+        badge: 'BIG BANG DIWALI',
+        title: 'Acer Swift Neo AI PCs',
+        subtitle: 'From ₹47,000* | Up to Intel Core Ultra 5 | 16/512 GB',
+        priceText: 'From ₹47,000*',
+        bankOffer: 'SBI Card 10% Instant Discount on Debit & Credit Cards',
+        image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80',
+        bgGradient: 'from-red-600 via-orange-600 to-amber-600',
+        link: '/shop?category=Electronics',
+    },
+    {
+        badge: 'BIG BANG FESTIVE',
+        title: 'Blankets & Quilts Up to 60% Off',
+        subtitle: 'Monte Carlo, Signature & More Winter Essentials',
+        priceText: 'Starting ₹1,299*',
+        bankOffer: 'HDFC & SBI Bank 10% Instant Discount',
+        image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=800&q=80',
+        bgGradient: 'from-amber-600 via-orange-500 to-yellow-600',
+        link: '/shop?category=Home',
+    },
+    {
+        badge: 'EXCLUSIVE LAUNCH',
+        title: 'SAMSUNG Galaxy F70e 5G',
+        subtitle: '6000mAh Battery | 50MP OIS Camera | Super AMOLED',
+        priceText: 'From ₹15,999*',
+        bankOffer: 'Get ₹1,500 Additional Bank & Exchange Bonus',
+        image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=80',
+        bgGradient: 'from-sky-700 via-blue-600 to-cyan-600',
+        link: '/shop?category=Mobiles',
+    },
+    {
+        badge: 'FESTIVE SPECIAL',
+        title: 'Mivi One 5G Smartphone',
+        subtitle: '120Hz Ultra Display & Frosted Back Design',
+        priceText: 'From ₹11,999*',
+        bankOffer: 'Instant No Cost EMI Available on All Cards',
+        image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&q=80',
+        bgGradient: 'from-emerald-700 via-teal-600 to-emerald-800',
+        link: '/shop?category=Mobiles',
+    },
+];
+
+const seedCompleteDatabase = async () => {
     try {
-        const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/dropcart';
-        console.log(`Connecting to MongoDB at: ${mongoUri}...`);
-        await mongoose.connect(mongoUri);
-        console.log('Connected to MongoDB.');
+        console.log('Connecting to MongoDB Atlas...');
+        await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 });
+        console.log('Connected to MongoDB database.');
 
-        // 1. Create or ensure Default Admin
-        const adminEmail = 'admin@dropcart.com';
-        const adminPassword = 'adminpassword123';
+        // 1. CLEAR PREVIOUS DATA
+        console.log('Purging existing collections for clean seed...');
+        await Promise.all([
+            User.deleteMany({}),
+            Product.deleteMany({}),
+            Order.deleteMany({}),
+            StoreSettings.deleteMany({}),
+        ]);
+        console.log('Collections purged.');
 
-        let adminUser = await User.findOne({ email: adminEmail });
-        if (!adminUser) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(adminPassword, salt);
+        // 2. CREATE USERS
+        console.log('Creating Admin, Staff, and Customer users...');
+        const salt = await bcrypt.genSalt(10);
+        const adminPasswordHash = await bcrypt.hash('adminpassword123', salt);
+        const staffPasswordHash = await bcrypt.hash('staff123', salt);
+        const customerPasswordHash = await bcrypt.hash('aquib123', salt);
 
-            adminUser = await User.create({
-                name: 'System Admin',
-                email: adminEmail,
-                password: hashedPassword,
-                role: 'admin',
-                isAdmin: true,
-                permissions: ['manage_products', 'manage_orders', 'manage_appearance', 'manage_staff'],
+        // Admin User
+        const adminUser = await User.create({
+            name: 'System Admin',
+            email: 'admin@dropcart.com',
+            password: adminPasswordHash,
+            role: 'admin',
+            isAdmin: true,
+            permissions: ['manage_products', 'manage_orders', 'manage_appearance', 'manage_staff'],
+            coins: 500,
+            deliveryCity: 'Mumbai',
+            deliveryPincode: '400001',
+        });
+
+        // Staff 1: Inventory Manager
+        const staff1 = await User.create({
+            name: 'Rahul Sharma',
+            email: 'rahul.staff@dropcart.com',
+            password: staffPasswordHash,
+            role: 'staff',
+            isAdmin: false,
+            permissions: ['manage_products', 'manage_orders'],
+            coins: 100,
+        });
+
+        // Customer: Aquib (Customer persona from screenshot)
+        const customerAquib = await User.create({
+            name: 'Aquib',
+            email: 'aquib@gmail.com',
+            password: customerPasswordHash,
+            role: 'customer',
+            isAdmin: false,
+            coins: 120, // matches coin balance
+            deliveryCity: 'Bengaluru',
+            deliveryPincode: '560001',
+            address: 'Flat 402, Prestige Tower, MG Road',
+            city: 'Bengaluru',
+            postalCode: '560001',
+            country: 'India',
+            phone: '+91 9876543210',
+        });
+
+        console.log('Users created:');
+        console.log('  👑 Admin:     admin@dropcart.com (Password: adminpassword123)');
+        console.log('  🛡️ Staff:     rahul.staff@dropcart.com (Password: staff123)');
+        console.log('  👤 Customer:  aquib@gmail.com (Password: aquib123)');
+
+        // 3. CREATE PRODUCTS WITH VERIFIED REVIEWS
+        console.log('Seeding products with customer reviews...');
+        const createdProducts = [];
+        for (const item of dummyProducts) {
+            const reviews = [
+                {
+                    user: customerAquib._id,
+                    name: customerAquib.name,
+                    rating: 5,
+                    comment: 'Super fast delivery and fantastic build quality! 100% recommended.',
+                    createdAt: new Date(Date.now() - 3 * 86400000),
+                },
+                {
+                    user: staff1._id,
+                    name: 'Verified Buyer',
+                    rating: 4,
+                    comment: 'Works exactly as described. Genuine product with proper manufacturer warranty card.',
+                    createdAt: new Date(Date.now() - 7 * 86400000),
+                },
+            ];
+
+            const prod = await Product.create({
+                ...item,
+                reviews,
             });
-            console.log(`\n👑 Admin Account Created:`);
-            console.log(`   Email:    ${adminEmail}`);
-            console.log(`   Password: ${adminPassword}`);
-        } else {
-            console.log(`\n👑 Admin Account already exists:`);
-            console.log(`   Email:    ${adminEmail}`);
+            createdProducts.push(prod);
         }
+        console.log(`Created ${createdProducts.length} rich catalog products across categories.`);
 
-        // 2. Insert sample products if empty
-        const count = await Product.countDocuments();
-        if (count === 0) {
-            await Product.insertMany(sampleProducts);
-            console.log(`📦 Seeded ${sampleProducts.length} sample products into catalog.`);
-        } else {
-            console.log(`📦 Catalog already contains ${count} products.`);
-        }
+        // Add 2 items to Aquib's wishlist
+        customerAquib.wishlist = [createdProducts[0]._id, createdProducts[8]._id];
+        await customerAquib.save();
 
-        // 3. Ensure store appearance settings exist
-        const settingsCount = await StoreSettings.countDocuments();
-        if (settingsCount === 0) {
-            await StoreSettings.create({});
-            console.log(`🎨 Default storefront settings initialized.`);
-        }
+        // 4. CREATE PAST AND ACTIVE ORDERS (For Order Tracker & Admin Hub testing)
+        console.log('Creating diverse orders with live tracking stages...');
 
-        console.log('\n✅ Database seeding completed successfully!\n');
+        // Order 1: Delivered
+        await Order.create({
+            user: customerAquib._id,
+            orderItems: [
+                {
+                    name: createdProducts[1].name,
+                    qty: 1,
+                    image: createdProducts[1].image,
+                    price: createdProducts[1].price,
+                    product: createdProducts[1]._id,
+                },
+            ],
+            shippingAddress: {
+                address: 'Flat 402, Prestige Tower, MG Road',
+                city: 'Bengaluru',
+                postalCode: '560001',
+                country: 'India',
+            },
+            paymentMethod: 'Online',
+            totalPrice: createdProducts[1].price,
+            isPaid: true,
+            paidAt: new Date(Date.now() - 5 * 86400000),
+            status: 'Delivered',
+            deliveredAt: new Date(Date.now() - 1 * 86400000),
+            createdAt: new Date(Date.now() - 5 * 86400000),
+        });
+
+        // Order 2: Out for Delivery / Shipped
+        await Order.create({
+            user: customerAquib._id,
+            orderItems: [
+                {
+                    name: createdProducts[8].name,
+                    qty: 1,
+                    image: createdProducts[8].image,
+                    price: createdProducts[8].price,
+                    product: createdProducts[8]._id,
+                },
+                {
+                    name: createdProducts[11].name,
+                    qty: 1,
+                    image: createdProducts[11].image,
+                    price: createdProducts[11].price,
+                    product: createdProducts[11]._id,
+                },
+            ],
+            shippingAddress: {
+                address: 'Flat 402, Prestige Tower, MG Road',
+                city: 'Bengaluru',
+                postalCode: '560001',
+                country: 'India',
+            },
+            paymentMethod: 'COD',
+            totalPrice: createdProducts[8].price + createdProducts[11].price,
+            isPaid: false,
+            status: 'Shipped',
+            createdAt: new Date(Date.now() - 2 * 86400000),
+        });
+
+        // Order 3: Processing
+        await Order.create({
+            user: customerAquib._id,
+            orderItems: [
+                {
+                    name: createdProducts[0].name,
+                    qty: 1,
+                    image: createdProducts[0].image,
+                    price: createdProducts[0].price,
+                    product: createdProducts[0]._id,
+                },
+            ],
+            shippingAddress: {
+                address: 'Flat 402, Prestige Tower, MG Road',
+                city: 'Bengaluru',
+                postalCode: '560001',
+                country: 'India',
+            },
+            paymentMethod: 'Online',
+            totalPrice: createdProducts[0].price,
+            isPaid: true,
+            paidAt: new Date(Date.now() - 12 * 3600000),
+            status: 'Processing',
+            createdAt: new Date(Date.now() - 12 * 3600000),
+        });
+
+        // Order 4: Pending (Admin can test status update)
+        await Order.create({
+            user: customerAquib._id,
+            orderItems: [
+                {
+                    name: createdProducts[4].name,
+                    qty: 1,
+                    image: createdProducts[4].image,
+                    price: createdProducts[4].price,
+                    product: createdProducts[4]._id,
+                },
+            ],
+            shippingAddress: {
+                address: 'Sector 62, Commercial Hub',
+                city: 'Noida',
+                postalCode: '201301',
+                country: 'India',
+            },
+            paymentMethod: 'COD',
+            totalPrice: createdProducts[4].price,
+            isPaid: false,
+            status: 'Pending',
+            createdAt: new Date(),
+        });
+
+        console.log('4 Orders created covering Pending, Processing, Shipped, and Delivered stages.');
+
+        // 5. CREATE FLIPKART STYLE STOREFRONT SETTINGS
+        console.log('Initializing promotional carousel banners...');
+        await StoreSettings.create({
+            announcement: '🔥 BIG BANG SALE LIVE: Extra 10% Instant Discount on SBI & HDFC Bank Cards | Free Delivery on All Orders!',
+            bannerActive: true,
+            heroTitle: 'India’s Biggest Festive Sale is Live',
+            heroSubtitle: 'Unbeatable deals on AI Laptops, 5G Smartphones, Winter Mink Blankets, and Trending Fashion.',
+            heroBadge: 'Big Bang Diwali 2026',
+            themeColor: 'orange',
+            banners: promotionalBanners,
+        });
+
+        console.log('\n===============================================');
+        console.log('🎉 FULL FLIPKART-GRADE DATABASE SEEDING COMPLETE!');
+        console.log('===============================================\n');
+
+        await mongoose.disconnect();
         process.exit(0);
-    } catch (error) {
-        console.error('❌ Seeding failed:', error.message);
+    } catch (err) {
+        console.error('❌ Seeding failed with error:', err.message);
         process.exit(1);
     }
 };
 
-seedData();
+seedCompleteDatabase();

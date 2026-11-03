@@ -1,10 +1,21 @@
 const mongoose = require('mongoose');
 
+const bannerSlideSchema = new mongoose.Schema({
+    badge: { type: String, default: 'Festive Mega Sale' },
+    title: { type: String, required: true },
+    subtitle: { type: String, default: '' },
+    priceText: { type: String, default: '' },
+    bankOffer: { type: String, default: '10% Instant Discount on All Major Bank Cards' },
+    image: { type: String, required: true },
+    bgGradient: { type: String, default: 'from-amber-600 via-orange-600 to-red-600' },
+    link: { type: String, default: '/shop' },
+});
+
 const storeSettingsSchema = new mongoose.Schema(
     {
         announcement: {
             type: String,
-            default: '🔥 Special Launch Offer: Free Express Delivery on orders above ₹499! Use code: DROPCART',
+            default: '🔥 BIG BANG SALE LIVE: Up to 70% Off + Extra 10% Bank Discount on Credit/Debit Cards!',
         },
         bannerActive: {
             type: Boolean,
@@ -12,25 +23,21 @@ const storeSettingsSchema = new mongoose.Schema(
         },
         heroTitle: {
             type: String,
-            default: 'Everything You Love. In One Place.',
+            default: 'India’s Favorite Online Shopping Destination',
         },
         heroSubtitle: {
             type: String,
-            default: 'Discover high quality products at great prices. From everyday essentials to trending collections.',
+            default: 'Mobiles, Fashion, Electronics, Home Appliances, and Lifestyle at Unmatched Deals.',
         },
         heroBadge: {
             type: String,
-            default: 'Exclusive New Arrivals 2026',
+            default: 'Mega Festive Deals 2026',
         },
         themeColor: {
             type: String,
-            enum: ['orange', 'indigo', 'emerald', 'rose', 'blue'],
             default: 'orange',
         },
-        featuredTag: {
-            type: String,
-            default: 'Trending Now',
-        },
+        banners: [bannerSlideSchema],
     },
     { timestamps: true }
 );

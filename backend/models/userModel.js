@@ -18,7 +18,6 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        // Role-based access control: 'admin', 'staff', or 'customer'
         role: {
             type: String,
             enum: ['admin', 'staff', 'customer'],
@@ -29,19 +28,29 @@ const userSchema = new mongoose.Schema(
             required: true,
             default: false,
         },
-        // Granular permissions for staff members
-        // Options: 'manage_products', 'manage_orders', 'manage_appearance', 'manage_staff'
         permissions: {
             type: [String],
             default: [],
         },
-        // Customer Wishlist (Array of Product ObjectIds)
         wishlist: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Product',
             },
         ],
+        // Loyalty Reward SuperCoins
+        coins: {
+            type: Number,
+            default: 50,
+        },
+        deliveryPincode: {
+            type: String,
+            default: '110001',
+        },
+        deliveryCity: {
+            type: String,
+            default: 'New Delhi',
+        },
         phone: {
             type: String,
             default: '',
@@ -60,7 +69,7 @@ const userSchema = new mongoose.Schema(
         },
         country: {
             type: String,
-            default: '',
+            default: 'India',
         },
     },
     { timestamps: true }

@@ -32,6 +32,10 @@ const productSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+        brand: {
+            type: String,
+            default: 'DropCart',
+        },
         image: {
             type: String,
             required: true,
@@ -45,11 +49,21 @@ const productSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+        // Selling Price
         price: {
             type: Number,
             required: true,
             default: 0,
             min: 0,
+        },
+        // Original MRP (for strikethrough & % discount)
+        originalPrice: {
+            type: Number,
+            default: 0,
+        },
+        discountPercent: {
+            type: Number,
+            default: 0,
         },
         countInStock: {
             type: Number,
@@ -63,11 +77,19 @@ const productSchema = new mongoose.Schema(
         },
         rating: {
             type: Number,
-            default: 0,
+            default: 4.5,
         },
         numReviews: {
             type: Number,
             default: 0,
+        },
+        isFeatured: {
+            type: Boolean,
+            default: false,
+        },
+        tag: {
+            type: String,
+            default: '', // e.g. "Top Deal", "Bestseller", "Trending"
         },
         reviews: [reviewSchema],
     },
