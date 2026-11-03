@@ -5,7 +5,7 @@ const StoreSettings = require('../models/storeSettingsModel');
 // @access  Public
 const getSettings = async (req, res) => {
     try {
-        let settings = await StoreSettings.findOne();
+        let settings = await StoreSettings.findOne().sort({ updatedAt: -1 });
         if (!settings) {
             settings = await StoreSettings.create({});
         }
@@ -17,7 +17,7 @@ const getSettings = async (req, res) => {
 
 // @desc    Update store appearance settings
 // @route   PUT /api/settings
-// @access  Private / Admin or Staff with manage_appearance
+// @access  Private / Admin or Staff
 const updateSettings = async (req, res) => {
     try {
         const {
@@ -30,7 +30,7 @@ const updateSettings = async (req, res) => {
             featuredTag,
         } = req.body;
 
-        let settings = await StoreSettings.findOne();
+        let settings = await StoreSettings.findOne().sort({ updatedAt: -1 });
         if (!settings) {
             settings = new StoreSettings();
         }

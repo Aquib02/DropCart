@@ -38,8 +38,20 @@ const defaultSlides = [
     },
 ];
 
-const HeroBannerSlider = ({ customBanners = [] }) => {
-    const banners = customBanners && customBanners.length > 0 ? customBanners : defaultSlides;
+const HeroBannerSlider = ({ customBanners = [], heroTitle = '', heroSubtitle = '', heroBadge = '' }) => {
+    // Dynamically inject custom headline, badge, and subtitle into primary slide
+    const baseBanners = customBanners && customBanners.length > 0 ? customBanners : defaultSlides;
+    const banners = baseBanners.map((slide, idx) => {
+        if (idx === 0) {
+            return {
+                ...slide,
+                badge: heroBadge && heroBadge.trim() !== '' ? heroBadge : slide.badge,
+                title: heroTitle && heroTitle.trim() !== '' ? heroTitle : slide.title,
+                tagline: heroSubtitle && heroSubtitle.trim() !== '' ? heroSubtitle : slide.tagline,
+            };
+        }
+        return slide;
+    });
     const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {

@@ -19,6 +19,8 @@ import {
     Tag,
     MessageSquare,
     AlertCircle,
+    CheckCircle2,
+    Loader2,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
@@ -75,7 +77,7 @@ const AdminDashboard = () => {
         themeColor: 'orange',
     });
     const [appearanceLoading, setAppearanceLoading] = useState(false);
-    const [appearanceMessage, setAppearanceMessage] = useState('');
+    const [appearanceStatus, setAppearanceStatus] = useState({ type: '', message: '' });
 
     // Staff & RBAC State
     const [staffList, setStaffList] = useState([]);
@@ -326,29 +328,44 @@ const AdminDashboard = () => {
     const handleAppearanceSubmit = async (e) => {
         e.preventDefault();
         setAppearanceLoading(true);
-        setAppearanceMessage('');
+        setAppearanceStatus({ type: '', message: '' });
+
+        if (!user || !user.token) {
+            setAppearanceLoading(false);
+            setAppearanceStatus({
+                type: 'error',
+                message: 'Admin authorization session is missing or expired. Please re-login.'
+            });
+            return;
+        }
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             const { data } = await axios.put(`${API_BASE_URL}/api/settings`, appearance, config);
             setAppearance({
-                announcement: data.announcement,
-                bannerActive: data.bannerActive,
-                heroTitle: data.heroTitle,
-                heroSubtitle: data.heroSubtitle,
-                heroBadge: data.heroBadge,
-                themeColor: data.themeColor,
+                announcement: data.announcement || '',
+                bannerActive: data.bannerActive !== undefined ? data.bannerActive : true,
+                heroTitle: data.heroTitle || '',
+                heroSubtitle: data.heroSubtitle || '',
+                heroBadge: data.heroBadge || '',
+                themeColor: data.themeColor || 'orange',
             });
             if (data.themeColor) {
                 document.documentElement.setAttribute('data-theme', data.themeColor);
                 localStorage.setItem('dropcart_theme', data.themeColor);
             }
             setAppearanceLoading(false);
-            setAppearanceMessage('Storefront appearance updated successfully! Live on site.');
-            setTimeout(() => setAppearanceMessage(''), 3000);
+            setAppearanceStatus({
+                type: 'success',
+                message: 'Live changes published successfully! Updated across all storefront visitors.'
+            });
+            setTimeout(() => setAppearanceStatus({ type: '', message: '' }), 5000);
         } catch (error) {
             setAppearanceLoading(false);
-            setAppearanceMessage(error.response?.data?.message || 'Failed to update appearance');
+            setAppearanceStatus({
+                type: 'error',
+                message: error.response?.data?.message || 'Failed to update appearance. Please try again.'
+            });
         }
     };
 
@@ -1091,9 +1108,20 @@ const AdminDashboard = () => {
                             </p>
                         </div>
 
-                        {appearanceMessage && (
-                            <div className="mb-6 rounded-xl bg-emerald-50 p-4 text-xs font-bold text-emerald-700">
-                                {appearanceMessage}
+                        {appearanceStatus.message && (
+                            <div
+                                className={`mb-6 flex items-center gap-2 rounded-xl p-4 text-xs font-bold ${
+                                    appearanceStatus.type === 'success'
+                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                        : 'bg-red-50 text-red-800 border border-red-200'
+                                }`}
+                            >
+                                {appearanceStatus.type === 'success' ? (
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                                ) : (
+                                    <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+                                )}
+                                <span>{appearanceStatus.message}</span>
                             </div>
                         )}
 
@@ -1220,13 +1248,39 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={appearanceLoading}
-                                className="rounded-xl bg-orange-500 px-8 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:opacity-50"
-                            >
-                                {appearanceLoading ? 'Saving Theme...' : 'Publish Live Changes'}
-                            </button>
+                            <div className="flex flex-wrap items-center gap-4 pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={appearanceLoading}
+                                    className="flex items-center gap-2 rounded-xl bg-orange-500 px-8 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:opacity-50"
+                                >
+                                    {appearanceLoading ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            <span>Publishing Live Changes...</span>
+                                        </>
+                                    ) : (
+                                        'Publish Live Changes'
+                                    )}
+                                </button>
+
+                                {appearanceStatus.message && (
+                                    <div
+                                        className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold animate-in fade-in ${
+                                            appearanceStatus.type === 'success'
+                                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                                : 'bg-red-50 text-red-800 border border-red-200'
+                                        }`}
+                                    >
+                                        {appearanceStatus.type === 'success' ? (
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                                        ) : (
+                                            <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+                                        )}
+                                        <span>{appearanceStatus.message}</span>
+                                    </div>
+                                )}
+                            </div>
                         </form>
                     </div>
                 )}

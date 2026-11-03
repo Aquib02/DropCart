@@ -31,7 +31,7 @@ const Navbar = () => {
     const { totalCount } = useContext(CartContext);
     const { wishlistCount } = useContext(WishlistContext);
     const { compareItems, setIsCompareModalOpen } = useContext(CompareContext) || { compareItems: [] };
-    const { notifications = [], unreadCount = 0, markAllAsRead, clearNotifications } = useSocket() || {};
+    const { socket, notifications = [], unreadCount = 0, markAllAsRead, clearNotifications } = useSocket() || {};
     const navigate = useNavigate();
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -75,9 +75,9 @@ const Navbar = () => {
         const fetchSettings = async () => {
             try {
                 const { data } = await axios.get(`${API_BASE_URL}/api/settings`);
-                if (data && data.bannerActive) {
-                    setAnnouncement(data.announcement);
-                    setBannerActive(true);
+                if (data) {
+                    setAnnouncement(data.announcement || '');
+                    setBannerActive(data.bannerActive !== undefined ? data.bannerActive : true);
                 }
             } catch {
                 setBannerActive(false);
@@ -85,6 +85,19 @@ const Navbar = () => {
         };
         fetchSettings();
     }, []);
+
+    // Real-Time Socket.IO: Live update when admin publishes announcement or banner changes
+    useEffect(() => {
+        if (!socket) return;
+        const handleSettingsUpdate = (data) => {
+            if (data) {
+                if (data.announcement !== undefined) setAnnouncement(data.announcement);
+                if (data.bannerActive !== undefined) setBannerActive(data.bannerActive);
+            }
+        };
+        socket.on('settingsUpdated', handleSettingsUpdate);
+        return () => socket.off('settingsUpdated', handleSettingsUpdate);
+    }, [socket]);
 
     const logoutHandler = () => {
         setDropdownOpen(false);

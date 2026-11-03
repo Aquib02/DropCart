@@ -8,11 +8,25 @@ import HeroBannerSlider from '../components/HeroBannerSlider';
 import ProductCard from '../components/ProductCard';
 import RecentlyViewedProducts from '../components/RecentlyViewedProducts';
 import AIPersonalizedRecommendations from '../components/AIPersonalizedRecommendations';
+import { useSocket } from '../context/SocketContext';
 
 const Home = () => {
     const [products, setProducts] = useState([]);
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { socket } = useSocket() || {};
+
+    // Live Socket.IO listener for real-time storefront appearance updates
+    useEffect(() => {
+        if (!socket) return;
+        const handleSettingsUpdate = (updatedSettings) => {
+            if (updatedSettings) {
+                setSettings(updatedSettings);
+            }
+        };
+        socket.on('settingsUpdated', handleSettingsUpdate);
+        return () => socket.off('settingsUpdated', handleSettingsUpdate);
+    }, [socket]);
 
     useEffect(() => {
         const fetchHomeData = async () => {
@@ -50,7 +64,12 @@ const Home = () => {
             <CategoryBar />
 
             {/* Modern Hero Showcase */}
-            <HeroBannerSlider customBanners={settings?.banners} />
+            <HeroBannerSlider
+                customBanners={settings?.banners}
+                heroTitle={settings?.heroTitle}
+                heroSubtitle={settings?.heroSubtitle}
+                heroBadge={settings?.heroBadge}
+            />
 
             {/* Section 1: Trending 5G Mobiles */}
             <section className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
