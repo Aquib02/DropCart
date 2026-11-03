@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Sparkles, CheckCircle, AlertCircle, ThumbsUp } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 const AIReviewSummary = ({ productId }) => {
     const [summaryData, setSummaryData] = useState(null);
@@ -13,7 +14,7 @@ const AIReviewSummary = ({ productId }) => {
         const fetchSummary = async () => {
             try {
                 setLoading(true);
-                const { data } = await axios.get(`/api/ai/review-summary/${productId}`);
+                const { data } = await axios.get(`${API_BASE_URL}/api/ai/review-summary/${productId}`);
                 if (isMounted && data.success) {
                     setSummaryData(data);
                 }

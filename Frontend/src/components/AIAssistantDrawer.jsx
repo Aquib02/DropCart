@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Sparkles, Send, X, Bot, User, ShoppingBag, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { API_BASE_URL } from '../config';
 
 const AIAssistantDrawer = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -51,7 +52,7 @@ const AIAssistantDrawer = () => {
         setLoading(true);
 
         try {
-            const { data } = await axios.post('/api/ai/chat', {
+            const { data } = await axios.post(`${API_BASE_URL}/api/ai/chat`, {
                 message: textToSend,
                 conversationHistory: messages.slice(-4)
             });

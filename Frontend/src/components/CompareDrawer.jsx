@@ -4,6 +4,8 @@ import axios from 'axios';
 import { X, Scale, ShoppingBag, Star, Check, AlertCircle, Sparkles, Award } from 'lucide-react';
 import { CompareContext } from '../context/CompareContext';
 import { CartContext } from '../context/CartContext';
+import { API_BASE_URL } from '../config';
+import EmptyState from './EmptyState';
 
 const CompareDrawer = () => {
     const {
@@ -28,7 +30,7 @@ const CompareDrawer = () => {
         const fetchAiAnalysis = async () => {
             try {
                 setAiLoading(true);
-                const { data } = await axios.post('/api/ai/compare-analysis', {
+                const { data } = await axios.post(`${API_BASE_URL}/api/ai/compare-analysis`, {
                     productIds: compareItems.map((p) => p._id),
                 });
                 if (isMounted && data.success) {
@@ -47,7 +49,8 @@ const CompareDrawer = () => {
         };
     }, [isCompareModalOpen, compareItems]);
 
-    if (compareItems.length === 0) return null;
+    // Only hide everything if no items AND modal is closed
+    if (compareItems.length === 0 && !isCompareModalOpen) return null;
 
     // Collect all unique specification keys across all items in comparison
     const allSpecKeys = [];
@@ -165,8 +168,20 @@ const CompareDrawer = () => {
                             </div>
                         </div>
 
-                        {/* Modal Body: Comparison Grid */}
-                        <div className="flex-1 overflow-x-auto overflow-y-auto p-6 space-y-6">
+                        {/* Modal Body: Comparison Grid or Empty State */}
+                        {compareItems.length === 0 ? (
+                            <div className="p-8">
+                                <EmptyState
+                                    type="no-products"
+                                    title="No Products Selected for Comparison"
+                                    description="Tap the scale icon on any product card in the store to select up to 4 items and compare their specifications side-by-side."
+                                    actionText="Explore Products to Compare"
+                                    actionLink="/shop"
+                                    onAction={() => setIsCompareModalOpen(false)}
+                                />
+                            </div>
+                        ) : (
+                            <div className="flex-1 overflow-x-auto overflow-y-auto p-6 space-y-6">
                             {/* AI Verdict Card */}
                             {aiAnalysis && (
                                 <div className="rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 p-4 border border-amber-200">
@@ -327,6 +342,7 @@ const CompareDrawer = () => {
                                 </table>
                             </div>
                         </div>
+                        )}
                     </div>
                 </div>
             )}

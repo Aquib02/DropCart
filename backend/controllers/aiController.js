@@ -3,14 +3,20 @@ const { GoogleGenAI } = require('@google/genai');
 
 let geminiClient = null;
 function getGeminiClient() {
-  if (!geminiClient && process.env.GEMINI_API_KEY) {
-    geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  if (!geminiClient && process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '') {
+    try {
+      geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY.trim() });
+    } catch (e) {
+      console.warn('Could not initialize GoogleGenAI client:', e.message);
+      geminiClient = null;
+    }
   }
   return geminiClient;
 }
 
-// Helper: Extract price limit from text (e.g., "under 50000", "below 20k", "under 1,500")
+// Helper: Extract price limit from text (e.g., "under 50000", "below 20k", "under 1,500", "under ₹50,000")
 function extractPriceConstraint(text) {
+  if (!text) return null;
   const normalized = text.toLowerCase().replace(/,/g, '');
   const kMatch = normalized.match(/(?:under|below|less than|max|within)\s*(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d+)?)\s*k\b/i);
   if (kMatch) {
@@ -31,32 +37,42 @@ exports.chatWithAssistant = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Message is required' });
     }
 
-    // Fetch active catalog snapshot for real grounding
-    const catalog = await Product.find({ stock: { $gt: 0 } })
-      .select('title price category rating brand description stock discountPrice images specifications')
-      .limit(30)
+    // Fetch catalog products from MongoDB using correct field names: name, price, countInStock
+    const catalog = await Product.find({
+      $or: [
+        { isOutOfStock: false },
+        { countInStock: { $gt: 0 } },
+        { countInStock: { $exists: false } }
+      ]
+    })
+      .select('name price originalPrice category rating numReviews brand description image images countInStock specifications')
+      .limit(40)
       .lean();
 
     const maxPrice = extractPriceConstraint(message);
-    const keywords = message.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    const keywords = message
+      .toLowerCase()
+      .replace(/[^\w\s]/gi, '')
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !['best', 'show', 'find', 'give', 'what', 'with', 'under', 'from'].includes(w));
 
     let matchedProducts = [];
 
-    // Check if Gemini API is available
+    // 1. Try Live Gemini API if key is present
     const ai = getGeminiClient();
     if (ai) {
       try {
         const catalogBrief = catalog.map(p => ({
           id: p._id,
-          title: p.title,
-          price: p.discountPrice || p.price,
+          name: p.name,
+          price: p.price,
           category: p.category,
-          rating: p.rating,
+          rating: p.rating || 4.5,
           brand: p.brand
         }));
 
         const prompt = `You are DropCart's elite AI Shopping Assistant. 
-You must strictly recommend real products from this provided database catalog only. 
+You must strictly recommend genuine products from this provided database catalog only. 
 NEVER invent fake products, prices, discounts, or specifications.
 Catalog: ${JSON.stringify(catalogBrief)}
 
@@ -64,12 +80,12 @@ User question: "${message}"
 
 Instructions:
 1. Provide a warm, concise, and helpful shopping recommendation in markdown.
-2. If recommending specific products from the catalog, mention their exact title and price.
+2. If recommending specific products from the catalog, mention their exact name and price (₹).
 3. At the very end of your response, output a single line with JSON array of matching product IDs like:
 MATCHED_IDS: ["id1", "id2"]`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-2.5-flash-lite',
           contents: prompt
         });
 
@@ -89,55 +105,47 @@ MATCHED_IDS: ["id1", "id2"]`;
           }
         }
 
-        if (matchedProducts.length === 0) {
-          // Fallback matching
-          matchedProducts = catalog.filter(p => {
-            const text = `${p.title} ${p.category} ${p.brand} ${p.description}`.toLowerCase();
-            const matchesKey = keywords.some(k => text.includes(k));
-            const matchesPrice = maxPrice ? (p.discountPrice || p.price) <= maxPrice : true;
-            return matchesKey && matchesPrice;
-          }).slice(0, 4);
+        if (matchedProducts.length > 0) {
+          return res.json({
+            success: true,
+            reply: cleanReply,
+            recommendedProducts: matchedProducts
+          });
         }
-
-        return res.json({
-          success: true,
-          reply: cleanReply,
-          recommendedProducts: matchedProducts
-        });
       } catch (geminiError) {
-        console.warn('Gemini API call failed, falling back to catalog matching:', geminiError.message);
+        console.warn('Gemini API call failed, falling back to database catalog engine:', geminiError.message);
       }
     }
 
-    // Deterministic Catalog Grounded Engine (Used when Gemini key is not set or network is offline)
+    // 2. High-Accuracy Database Catalog Grounded Engine (Always reliable fallback)
     let candidateProducts = catalog.filter(p => {
-      const pPrice = p.discountPrice || p.price;
+      const pPrice = Number(p.price) || 0;
       if (maxPrice && pPrice > maxPrice) return false;
-      const text = `${p.title} ${p.category} ${p.brand} ${p.description || ''}`.toLowerCase();
+      const text = `${p.name || ''} ${p.category || ''} ${p.brand || ''} ${p.description || ''}`.toLowerCase();
       return keywords.some(k => text.includes(k));
     });
 
     if (candidateProducts.length === 0 && maxPrice) {
-      // Find within budget
-      candidateProducts = catalog.filter(p => (p.discountPrice || p.price) <= maxPrice);
+      // Find within user budget
+      candidateProducts = catalog.filter(p => (Number(p.price) || 0) <= maxPrice);
     }
 
     if (candidateProducts.length === 0) {
-      // Default top rated
+      // Top rated catalog items
       candidateProducts = [...catalog].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3);
     } else {
       candidateProducts = candidateProducts.slice(0, 4);
     }
 
-    let reply = `Here are the top matches I found directly in our DropCart inventory`;
+    let reply = `Here are the top matches I found directly in our DropCart catalog`;
     if (maxPrice) reply += ` under ₹${maxPrice.toLocaleString('en-IN')}`;
     reply += `:\n\n`;
 
     candidateProducts.forEach((p, idx) => {
-      const price = p.discountPrice || p.price;
-      reply += `${idx + 1}. **${p.title}** - ₹${price.toLocaleString('en-IN')} (${p.rating || 4.5}★)\n`;
+      const price = Number(p.price) || 0;
+      reply += `${idx + 1}. **${p.name}** - ₹${price.toLocaleString('en-IN')} (${p.rating || 4.5}★)\n`;
     });
-    reply += `\nEach item is genuine, currently in stock, and eligible for festival discount coupons and SuperCoins!`;
+    reply += `\nEach item is genuine, in stock, and eligible for festival discount coupons and SuperCoins!`;
 
     res.json({
       success: true,
@@ -173,16 +181,13 @@ exports.naturalLanguageSearch = async (req, res) => {
       else if (lowerQuery.includes('sofa') || lowerQuery.includes('table') || lowerQuery.includes('bed') || lowerQuery.includes('chair')) detectedCategory = 'Furniture';
     }
 
-    // Build Mongo Query
+    // Build Mongo Query with correct fields
     const filter = {};
     if (detectedCategory) {
       filter.category = detectedCategory;
     }
     if (maxPrice) {
-      filter.$or = [
-        { discountPrice: { $gt: 0, $lte: maxPrice } },
-        { price: { $lte: maxPrice } }
-      ];
+      filter.price = { $lte: maxPrice };
     }
 
     // Keyword matching
@@ -198,7 +203,7 @@ exports.naturalLanguageSearch = async (req, res) => {
       products = await Product.find({
         ...filter,
         $or: [
-          { title: { $in: regexTerms } },
+          { name: { $in: regexTerms } },
           { description: { $in: regexTerms } },
           { brand: { $in: regexTerms } }
         ]
@@ -242,8 +247,8 @@ exports.getReviewSummary = async (req, res) => {
     if (reviews.length === 0) {
       return res.json({
         success: true,
-        summary: `No customer reviews yet for "${product.title}". Be the first verified buyer to review!`,
-        pros: ['Brand new item in pristine condition', 'Fast delivery available'],
+        summary: `No customer reviews yet for "${product.name}". Be the first verified buyer to review!`,
+        pros: ['Brand new item in pristine condition', 'Fast express delivery available'],
         cons: ['Awaiting initial community reviews'],
         sentiment: 'Neutral',
         positivePercentage: 100,
@@ -256,7 +261,7 @@ exports.getReviewSummary = async (req, res) => {
     if (ai) {
       try {
         const reviewTexts = reviews.map(r => `Rating: ${r.rating}★ - Comment: "${r.comment}"`).join('\n');
-        const prompt = `You are an AI sentiment analyzer. Analyze these customer reviews for product "${product.title}":
+        const prompt = `You are an AI sentiment analyzer. Analyze these customer reviews for product "${product.name}":
 ${reviewTexts}
 
 Output strictly valid JSON with this shape:
@@ -289,7 +294,6 @@ Output strictly valid JSON with this shape:
 
     // Deterministic Review Sentiment Engine
     const highRatings = reviews.filter(r => r.rating >= 4);
-    const lowRatings = reviews.filter(r => r.rating <= 2);
     const positivePercentage = Math.round((highRatings.length / reviews.length) * 100);
 
     const pros = [];
@@ -311,13 +315,13 @@ Output strictly valid JSON with this shape:
     });
 
     if (pros.length === 0) pros.push('Consistent performance meeting catalog specifications', 'Verified authentic purchase');
-    if (cons.length === 0) cons.push('Stock is moving quickly due to festive demand');
+    if (cons.length === 0) cons.push('High demand due to festive sale offers');
 
     const sentiment = positivePercentage >= 70 ? 'Positive' : positivePercentage >= 40 ? 'Mixed' : 'Needs Improvement';
 
     res.json({
       success: true,
-      summary: `${positivePercentage}% of verified buyers recommend "${product.title}". Customers praise its ${pros[0].toLowerCase()} and overall reliability.`,
+      summary: `${positivePercentage}% of verified buyers recommend "${product.name}". Customers praise its ${pros[0].toLowerCase()} and overall reliability.`,
       pros,
       cons,
       sentiment,
@@ -344,18 +348,18 @@ exports.compareAnalysis = async (req, res) => {
     }
 
     // Sort by price
-    const sortedByPrice = [...products].sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
+    const sortedByPrice = [...products].sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
     const sortedByRating = [...products].sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
     const valueWinner = sortedByPrice[0];
     const topRatedWinner = sortedByRating[0];
 
-    const aiRecommendation = `If budget is your priority, **${valueWinner.title}** at ₹${(valueWinner.discountPrice || valueWinner.price).toLocaleString('en-IN')} gives you the best price-to-performance ratio. If you want maximum buyer satisfaction, **${topRatedWinner.title}** leads with a ${topRatedWinner.rating || 4.5}★ rating.`;
+    const aiRecommendation = `If budget is your priority, **${valueWinner.name}** at ₹${Number(valueWinner.price).toLocaleString('en-IN')} gives you the best price-to-performance ratio. If you want maximum buyer satisfaction, **${topRatedWinner.name}** leads with a ${topRatedWinner.rating || 4.5}★ rating.`;
 
     res.json({
       success: true,
-      valueWinner: { id: valueWinner._id, title: valueWinner.title, price: valueWinner.discountPrice || valueWinner.price },
-      topRatedWinner: { id: topRatedWinner._id, title: topRatedWinner.title, rating: topRatedWinner.rating },
+      valueWinner: { id: valueWinner._id, title: valueWinner.name, price: valueWinner.price },
+      topRatedWinner: { id: topRatedWinner._id, title: topRatedWinner.name, rating: topRatedWinner.rating },
       aiRecommendation,
       products
     });
@@ -380,9 +384,10 @@ exports.visualSearch = async (req, res) => {
       matched = await Product.find({
         ...filter,
         $or: [
-          { title: { $in: regexes } },
+          { name: { $in: regexes } },
           { description: { $in: regexes } },
-          { category: { $in: regexes } }
+          { category: { $in: regexes } },
+          { brand: { $in: regexes } }
         ]
       }).limit(12);
     }

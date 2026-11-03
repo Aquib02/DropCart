@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { Camera, Upload, X, Sparkles, ArrowRight, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 const VisualSearchModal = ({ isOpen, onClose }) => {
     const [imagePreview, setImagePreview] = useState(null);
@@ -43,7 +44,7 @@ const VisualSearchModal = ({ isOpen, onClose }) => {
                 .filter(w => w.length > 2)
                 .join(' ');
 
-            const { data } = await axios.post('/api/ai/visual-search', {
+            const { data } = await axios.post(`${API_BASE_URL}/api/ai/visual-search`, {
                 visualKeywords: nameTokens || 'phone laptop shoe jacket watch headphone',
                 category: ''
             });

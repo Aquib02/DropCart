@@ -29,7 +29,7 @@ const Shop = () => {
         try {
             setIsAiSearching(true);
             setLoading(true);
-            const { data } = await axios.post('/api/ai/nl-search', { query: q });
+            const { data } = await axios.post(`${API_BASE_URL}/api/ai/nl-search`, { query: q });
             if (data.success) {
                 setProducts(data.products);
                 setAiSummary(data.aiSummary);
