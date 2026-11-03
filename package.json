@@ -1,0 +1,16 @@
+{
+  "name": "dropcart-app",
+  "version": "2.0.0",
+  "description": "DropCart Enterprise E-Commerce Full-Stack Application",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix Frontend\"",
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm run dev --prefix Frontend",
+    "seed": "npm run seed --prefix backend",
+    "build": "npm run build --prefix Frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5"
+  }
+}

@@ -1,13 +1,17 @@
+const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+
+// Load environment variables reliably from backend directory & current working dir
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config();
+
 const connectDB = require('./config/db.js');
 const authRoutes = require('./routes/authRoutes.js');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes.js');
 const settingsRoutes = require('./routes/settingsRoutes.js');
-
-dotenv.config();
 
 connectDB();
 

@@ -49,7 +49,7 @@ const CategoryBar = ({ selectedCategory = 'All', onSelectCategory }) => {
     };
 
     return (
-        <section className="border-b border-gray-200/80 bg-white shadow-xs">
+        <section className="border-b border-gray-200/80 bg-white shadow-sm">
             <div className="mx-auto max-w-7xl overflow-x-auto px-4 py-3 sm:px-6">
                 <div className="flex min-w-max items-center justify-between gap-6 sm:justify-center sm:gap-8">
                     {categories.map((cat) => {
@@ -68,7 +68,7 @@ const CategoryBar = ({ selectedCategory = 'All', onSelectCategory }) => {
                                     } ${
                                         isSelected
                                             ? 'ring-2 ring-orange-500 ring-offset-2'
-                                            : 'shadow-xs'
+                                            : 'shadow-sm'
                                     }`}
                                 >
                                     <Icon className="h-5 w-5" />

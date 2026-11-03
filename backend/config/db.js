@@ -1,7 +1,12 @@
+const path = require('path');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config();
 
 const connectDB = async () => {
-    const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/dropcart';
+    const mongoUri = process.env.MONGO_URI || 'mongodb+srv://Aquib:Aquib0786@cluster0.t2qut1m.mongodb.net/Ecommerce?appName=Cluster0';
 
     try {
         const conn = await mongoose.connect(mongoUri);

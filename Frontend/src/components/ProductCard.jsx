@@ -46,7 +46,7 @@ const ProductCard = ({ product }) => {
             : 0);
 
     return (
-        <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl">
+        <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl">
             {/* Image Container */}
             <div className="relative aspect-square w-full overflow-hidden bg-gray-50/50 p-3">
                 <Link to={`/product/${product._id}`} className="block h-full w-full">
@@ -60,12 +60,12 @@ const ProductCard = ({ product }) => {
 
                 {/* Tag / Category Badge */}
                 {product.tag ? (
-                    <div className="absolute left-2.5 top-2.5 flex items-center gap-1 rounded-md bg-amber-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-gray-950 shadow-xs">
+                    <div className="absolute left-2.5 top-2.5 flex items-center gap-1 rounded-md bg-amber-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-gray-950 shadow-sm">
                         <Zap className="h-2.5 w-2.5 fill-current" />
                         {product.tag}
                     </div>
                 ) : (
-                    <div className="absolute left-2.5 top-2.5 rounded-md bg-gray-900/80 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur-xs">
+                    <div className="absolute left-2.5 top-2.5 rounded-md bg-gray-900/80 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
                         {product.category}
                     </div>
                 )}
@@ -157,7 +157,7 @@ const ProductCard = ({ product }) => {
                                 ? 'cursor-not-allowed bg-gray-200 text-gray-400'
                                 : added
                                 ? 'bg-emerald-600 text-white'
-                                : 'bg-orange-500 text-white shadow-xs hover:bg-orange-600 active:scale-95'
+                                : 'bg-orange-500 text-white shadow-sm hover:bg-orange-600 active:scale-95'
                         }`}
                     >
                         {added ? (

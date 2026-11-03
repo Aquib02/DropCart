@@ -1,6 +1,10 @@
+const path = require('path');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
+
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config();
 
 const User = require('./models/userModel');
 const Product = require('./models/productModel');
@@ -377,7 +381,8 @@ const promotionalBanners = [
 const seedCompleteDatabase = async () => {
     try {
         console.log('Connecting to MongoDB Atlas...');
-        await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 });
+        const mongoUri = process.env.MONGO_URI || 'mongodb+srv://Aquib:Aquib0786@cluster0.t2qut1m.mongodb.net/Ecommerce?appName=Cluster0';
+        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 10000 });
         console.log('Connected to MongoDB database.');
 
         // 1. CLEAR PREVIOUS DATA

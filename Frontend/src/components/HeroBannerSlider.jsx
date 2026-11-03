@@ -110,7 +110,7 @@ const HeroBannerSlider = ({ customBanners = [] }) => {
 
                     {/* Right Column: Hero Product Visual */}
                     <div className="relative z-10 mt-4 flex items-center justify-center md:col-span-5 md:mt-0">
-                        <div className="relative aspect-4/3 w-full max-w-[280px] overflow-hidden rounded-2xl border-2 border-white/30 bg-white/10 p-2 shadow-2xl backdrop-blur-sm sm:max-w-[320px]">
+                        <div className="relative aspect-[4/3] w-full max-w-[280px] overflow-hidden rounded-2xl border-2 border-white/30 bg-white/10 p-2 shadow-2xl backdrop-blur-sm sm:max-w-[320px]">
                             <img
                                 src={current.image}
                                 alt={current.title}

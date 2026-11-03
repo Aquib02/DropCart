@@ -79,10 +79,10 @@ const Navbar = () => {
     const userCoins = user?.coins !== undefined ? user.coins : 50;
 
     return (
-        <header className="sticky top-0 z-50 w-full bg-white shadow-xs">
+        <header className="sticky top-0 z-50 w-full bg-white shadow-sm">
             {/* Top Festive Announcement Bar */}
             {bannerActive && announcement && (
-                <div className="bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 px-4 py-1.5 text-center text-xs font-bold text-white shadow-xs">
+                <div className="bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 px-4 py-1.5 text-center text-xs font-bold text-white shadow-sm">
                     <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
                         <Sparkles className="h-3.5 w-3.5 shrink-0 animate-pulse text-amber-200" />
                         <span className="truncate">{announcement}</span>
@@ -96,7 +96,7 @@ const Navbar = () => {
                     {/* Brand Logo & Flipkart/Travel Pill Switches */}
                     <div className="flex items-center gap-3">
                         <Link to="/" className="group flex items-center gap-2">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-400 font-black text-gray-950 shadow-xs transition-transform group-hover:scale-105">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-400 font-black text-gray-950 shadow-sm transition-transform group-hover:scale-105">
                                 🛍️
                             </span>
                             <div className="leading-tight">
@@ -164,7 +164,7 @@ const Navbar = () => {
                         >
                             <Heart className="h-5 w-5" />
                             {wishlistCount > 0 && (
-                                <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white shadow-xs">
+                                <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white shadow-sm">
                                     {wishlistCount}
                                 </span>
                             )}
@@ -178,7 +178,7 @@ const Navbar = () => {
                             <div className="relative">
                                 <ShoppingBag className="h-5 w-5 text-blue-600" />
                                 {totalCount > 0 && (
-                                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-black text-white shadow-xs">
+                                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-black text-white shadow-sm">
                                         {totalCount}
                                     </span>
                                 )}
@@ -265,7 +265,7 @@ const Navbar = () => {
                         ) : (
                             <Link
                                 to="/login"
-                                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-xs transition hover:bg-blue-700"
+                                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-sm transition hover:bg-blue-700"
                             >
                                 Login
                             </Link>
@@ -276,7 +276,7 @@ const Navbar = () => {
 
             {/* Delivery Location Pincode Modal */}
             {showLocationModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-sm rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl">
                         <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3">
                             <h3 className="text-sm font-black text-gray-900">Select Delivery Location</h3>
@@ -316,7 +316,7 @@ const Navbar = () => {
 
                             <button
                                 type="submit"
-                                className="w-full rounded-xl bg-orange-500 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-orange-600"
+                                className="w-full rounded-xl bg-orange-500 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600"
                             >
                                 Set Location
                             </button>
