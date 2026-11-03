@@ -45,11 +45,11 @@ const Home = () => {
     const fashion = productList.filter((p) => p.category === 'Fashion');
 
     return (
-        <div className="min-h-screen bg-[#f1f3f6] pb-16">
-            {/* Category Ribbon (Flipkart Style) */}
+        <div className="min-h-screen bg-[#f8fafc] pb-20">
+            {/* Category Ribbon */}
             <CategoryBar />
 
-            {/* Festive Diwali Carousel & Wide Ad Showcase (From Screenshot) */}
+            {/* Modern Hero Showcase */}
             <HeroBannerSlider customBanners={settings?.banners} />
 
             {/* Section 1: Trending 5G Mobiles */}
@@ -62,19 +62,19 @@ const Home = () => {
                                     <Zap className="h-3.5 w-3.5 fill-current" />
                                 </span>
                                 <h2 className="text-xl font-black tracking-tight text-gray-900 sm:text-2xl">
-                                    Best of 5G Mobiles & Smartphones
+                                    Top 5G Smartphones
                                 </h2>
                             </div>
                             <p className="mt-0.5 text-xs text-gray-500">
-                                Grab latest Samsung, iPhone, Mivi & OnePlus deals with bank discounts
+                                Latest Samsung, Apple, OnePlus & Google Pixel with exchange bonuses
                             </p>
                         </div>
 
                         <Link
                             to="/shop?category=Mobiles"
-                            className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700"
+                            className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-bold text-gray-800 transition hover:bg-gray-100 shadow-2xs"
                         >
-                            View All Mobiles <ArrowRight className="h-3.5 w-3.5" />
+                            View All <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                     </div>
 
@@ -92,18 +92,18 @@ const Home = () => {
                     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
                         <div>
                             <h2 className="text-xl font-black tracking-tight text-gray-900 sm:text-2xl">
-                                AI Laptops, Audio & Gadgets
+                                Laptops, Audio & Tech Essentials
                             </h2>
                             <p className="mt-0.5 text-xs text-gray-500">
-                                Intel Core Ultra AI PCs, Sony ANC Headphones, and boAt Airdopes
+                                High-performance AI workstations, studio headphones, and accessories
                             </p>
                         </div>
 
                         <Link
                             to="/shop?category=Electronics"
-                            className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-100"
+                            className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-bold text-gray-800 transition hover:bg-gray-100 shadow-2xs"
                         >
-                            Explore Electronics <ArrowRight className="h-3.5 w-3.5" />
+                            Explore Tech <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                     </div>
 
@@ -179,35 +179,43 @@ const Home = () => {
             {/* Recently Viewed Products Strip */}
             <RecentlyViewedProducts />
 
-            {/* Flipkart Trust Strip */}
+            {/* Enterprise Assurance Strip */}
             <section className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
-                <div className="grid grid-cols-2 gap-4 rounded-3xl border border-gray-200/80 bg-white p-6 shadow-sm sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 rounded-3xl border border-gray-200/80 bg-white p-6 shadow-xs sm:grid-cols-4">
                     <div className="flex items-center gap-3">
-                        <ShieldCheck className="h-8 w-8 text-blue-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
+                            <ShieldCheck className="h-5 w-5" />
+                        </div>
                         <div>
-                            <p className="text-xs font-black text-gray-900">100% Original</p>
-                            <p className="text-[10px] text-gray-400">Direct from Brands</p>
+                            <p className="text-xs font-black text-gray-900">100% Authentic</p>
+                            <p className="text-[10px] text-gray-400">Direct Brand Warranty</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Truck className="h-8 w-8 text-amber-500" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 shrink-0">
+                            <Truck className="h-5 w-5" />
+                        </div>
                         <div>
-                            <p className="text-xs font-black text-gray-900">Fast Delivery</p>
-                            <p className="text-[10px] text-gray-400">Free on orders &gt; ₹499</p>
+                            <p className="text-xs font-black text-gray-900">Express Delivery</p>
+                            <p className="text-[10px] text-gray-400">Free over ₹499</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <RotateCcw className="h-8 w-8 text-emerald-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
+                            <RotateCcw className="h-5 w-5" />
+                        </div>
                         <div>
                             <p className="text-xs font-black text-gray-900">Easy Returns</p>
-                            <p className="text-[10px] text-gray-400">7-Day Hassle Free</p>
+                            <p className="text-[10px] text-gray-400">7-Day Hassle-Free</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Award className="h-8 w-8 text-purple-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 shrink-0">
+                            <Award className="h-5 w-5" />
+                        </div>
                         <div>
-                            <p className="text-xs font-black text-gray-900">Plus Rewards</p>
-                            <p className="text-[10px] text-gray-400">Earn SuperCoins</p>
+                            <p className="text-xs font-black text-gray-900">Secure Checkout</p>
+                            <p className="text-[10px] text-gray-400">256-Bit SSL Encrypted</p>
                         </div>
                     </div>
                 </div>

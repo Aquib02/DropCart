@@ -1,75 +1,51 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Sparkles, CreditCard, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, ArrowRight, ShieldCheck, Zap, Scale } from 'lucide-react';
 
 const defaultSlides = [
     {
         id: 1,
-        badge: 'BIG BANG DIWALI',
-        title: 'Acer Swift Neo AI PCs',
-        tagline: 'Up to Intel Core Ultra 5 | 16/512 GB',
-        price: 'From ₹47,000*',
-        bankOffer: 'SBI Card 10% Instant Discount on Debit & Credit Cards',
+        badge: 'NEW GENERATION',
+        title: 'Core Ultra AI Performance Laptops',
+        tagline: 'Intel Core Ultra 7 • 16GB LPDDR5X • 1TB PCIe Gen4 SSD',
+        price: 'From ₹54,999',
+        offer: 'Instant ₹4,000 Bank Rebate + Free Next-Day Delivery',
         image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80',
-        bg: 'linear-gradient(135deg, #7f1d1d 0%, #b91c1c 40%, #c2410c 100%)',
+        bg: 'linear-gradient(135deg, #090d16 0%, #111827 50%, #1e293b 100%)',
         link: '/shop?category=Electronics',
     },
     {
         id: 2,
-        badge: 'FESTIVE WARMTH',
-        title: 'Warm Blankets & Quilts',
-        tagline: 'Monte Carlo, Signature & More Winter Essentials',
-        price: 'Up to 60% Off',
-        bankOffer: 'SBI & HDFC Bank 10% Instant Discount on All Orders',
-        image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=800&q=80',
-        bg: 'linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #b45309 100%)',
-        link: '/shop?category=Home',
+        badge: 'FLAGSHIP LAUNCH',
+        title: 'Samsung Galaxy S24 Series 5G',
+        tagline: 'Galaxy AI Features • 50MP Pro-Grade OIS • 120Hz Dynamic AMOLED',
+        price: 'Starting at ₹49,999',
+        offer: 'Up to ₹8,000 Exchange Bonus on Your Old Phone',
+        image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=80',
+        bg: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
+        link: '/shop?category=Mobiles',
     },
     {
         id: 3,
-        badge: 'EXCLUSIVE LAUNCH',
-        title: 'SAMSUNG Galaxy F70e 5G',
-        tagline: '6000mAh Battery | 50MP OIS Camera | Super AMOLED',
-        price: 'From ₹15,999*',
-        bankOffer: 'Get ₹1,500 Additional Bank & Exchange Bonus',
-        image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=80',
-        bg: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0369a1 100%)',
-        link: '/shop?category=Mobiles',
+        badge: 'SEASON SPECIAL',
+        title: 'Premium Winter & Streetwear',
+        tagline: 'Monte Carlo, Puma, Bomber Jackets & Artisan Leather Accessories',
+        price: 'Up to 50% Off',
+        offer: 'Extra 10% Off with Code WELCOME100 at Checkout',
+        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&q=80',
+        bg: 'linear-gradient(135deg, #1c1917 0%, #292524 50%, #44403c 100%)',
+        link: '/shop?category=Fashion',
     },
 ];
-
-const getSlideBackground = (slide, index) => {
-    if (slide?.bg && slide.bg.startsWith('linear-gradient')) {
-        return slide.bg;
-    }
-    const raw = `${slide?.bgGradient || ''} ${slide?.bg || ''} ${slide?.title || ''}`.toLowerCase();
-    if (raw.includes('blue') || raw.includes('sky') || raw.includes('cyan') || raw.includes('samsung')) {
-        return 'linear-gradient(135deg, #0a192f 0%, #1e3a8a 50%, #0284c7 100%)';
-    }
-    if (raw.includes('green') || raw.includes('emerald') || raw.includes('teal')) {
-        return 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #0f766e 100%)';
-    }
-    if (raw.includes('amber') || raw.includes('orange') || raw.includes('blanket')) {
-        return 'linear-gradient(135deg, #7c2d12 0%, #c2410c 50%, #b45309 100%)';
-    }
-    // Festive Red/Crimson
-    const defaults = [
-        'linear-gradient(135deg, #7f1d1d 0%, #b91c1c 45%, #c2410c 100%)',
-        'linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #b45309 100%)',
-        'linear-gradient(135deg, #0a192f 0%, #1e3a8a 50%, #0284c7 100%)',
-    ];
-    return defaults[index % defaults.length];
-};
 
 const HeroBannerSlider = ({ customBanners = [] }) => {
     const banners = customBanners && customBanners.length > 0 ? customBanners : defaultSlides;
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    // Auto-advance slide every 5 seconds
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % banners.length);
-        }, 5000);
+        }, 6000);
         return () => clearInterval(interval);
     }, [banners.length]);
 
@@ -82,130 +58,131 @@ const HeroBannerSlider = ({ customBanners = [] }) => {
     };
 
     const current = banners[currentIndex] || defaultSlides[0];
-    const backgroundStyle = getSlideBackground(current, currentIndex);
 
     return (
-        <section className="mx-auto max-w-7xl px-4 pt-4 sm:px-6">
-            {/* Top Cards Slider (Matching screenshot cards grid) */}
-            <div className="relative overflow-hidden rounded-3xl shadow-xl">
+        <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+            {/* Main Showcase Hero */}
+            <div className="relative overflow-hidden rounded-3xl shadow-xl transition-all duration-500">
                 <div
-                    style={{ background: backgroundStyle }}
-                    className="relative grid min-h-[250px] grid-cols-1 items-center px-12 py-7 text-white sm:min-h-[280px] sm:px-16 sm:py-9 md:grid-cols-12 md:gap-8 transition-all duration-500"
+                    style={{ background: current.bg || 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
+                    className="relative grid min-h-[380px] grid-cols-1 items-center gap-6 px-8 py-10 sm:min-h-[420px] sm:px-14 md:grid-cols-12 md:py-12"
                 >
-                    {/* Dark Vignette / Overlay to guarantee high contrast */}
-                    <div className="absolute inset-0 bg-black/25 pointer-events-none" />
-
-                    {/* Festive Ambient Lanterns / Glow */}
-                    <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-amber-400/20 blur-3xl pointer-events-none" />
-                    <div className="absolute left-8 bottom-0 h-40 w-40 rounded-full bg-red-500/20 blur-2xl pointer-events-none" />
-
-                    {/* Left Column: Offer Details */}
-                    <div className="relative z-10 space-y-2 md:col-span-7 sm:space-y-3">
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/40 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-amber-300 shadow-sm backdrop-blur-md">
-                            <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                            {current.badge}
+                    {/* Left Column: Headlines & Actions */}
+                    <div className="z-10 flex flex-col justify-center space-y-4 md:col-span-7">
+                        <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-orange-400 backdrop-blur-md border border-white/10">
+                                <Sparkles className="h-3 w-3 text-orange-400" />
+                                {current.badge || 'FEATURED'}
+                            </span>
                         </div>
 
-                        <h2 className="text-2xl font-black leading-tight text-white drop-shadow-md sm:text-3xl md:text-4xl">
+                        <h1 className="text-2xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl leading-tight">
                             {current.title}
-                        </h2>
+                        </h1>
 
-                        <p className="text-2xl font-black text-amber-300 drop-shadow-sm sm:text-3xl">
-                            {current.price || current.priceText}
+                        <p className="text-xs sm:text-sm font-medium text-gray-300 max-w-xl leading-relaxed">
+                            {current.tagline}
                         </p>
 
-                        <p className="text-xs font-semibold text-white/95 drop-shadow-sm sm:text-sm">
-                            {current.tagline || current.subtitle}
-                        </p>
-
-                        {/* Bank Card Offer Strip */}
-                        <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-white/20 bg-black/45 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm backdrop-blur-md">
-                            <CreditCard className="h-3.5 w-3.5 text-amber-300 shrink-0" />
-                            <span className="truncate">{current.bankOffer}</span>
+                        <div className="flex flex-wrap items-center gap-3 pt-1">
+                            <span className="text-2xl sm:text-3xl font-black text-white">
+                                {current.price}
+                            </span>
+                            {current.offer && (
+                                <span className="rounded-xl bg-orange-500/20 border border-orange-500/40 px-3 py-1 text-xs font-bold text-orange-300 backdrop-blur-md">
+                                    {current.offer}
+                                </span>
+                            )}
                         </div>
 
-                        <div className="pt-2">
+                        <div className="pt-3 flex items-center gap-3">
                             <Link
                                 to={current.link || '/shop'}
-                                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black uppercase tracking-wider text-gray-950 shadow-lg transition hover:bg-amber-100 hover:scale-105 active:scale-95"
+                                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-3 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-orange-500/25 transition hover:scale-105 active:scale-95"
                             >
-                                Shop Now <ArrowRight className="h-3.5 w-3.5 text-orange-600" />
+                                Shop Collection <ArrowRight className="h-4 w-4" />
+                            </Link>
+
+                            <Link
+                                to="/shop"
+                                className="inline-flex items-center gap-2 rounded-2xl bg-white/10 border border-white/20 hover:bg-white/20 px-5 py-3 text-xs font-bold text-white transition backdrop-blur-md"
+                            >
+                                Browse All
                             </Link>
                         </div>
                     </div>
 
-                    {/* Right Column: Hero Product Visual */}
-                    <div className="relative z-10 mt-4 flex items-center justify-center md:col-span-5 md:mt-0">
-                        <div className="relative aspect-[4/3] w-full max-w-[280px] overflow-hidden rounded-2xl border-2 border-white/30 bg-black/30 p-2 shadow-2xl backdrop-blur-md sm:max-w-[320px]">
+                    {/* Right Column: Hero Visual Showcase */}
+                    <div className="relative z-10 flex items-center justify-center md:col-span-5">
+                        <div className="relative aspect-[4/3] w-full max-w-[340px] overflow-hidden rounded-3xl border border-white/20 bg-white/5 p-2 shadow-2xl backdrop-blur-md group">
                             <img
                                 src={current.image}
                                 alt={current.title}
-                                className="h-full w-full rounded-xl object-cover shadow-inner"
+                                className="h-full w-full rounded-2xl object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                         </div>
                     </div>
 
-                    {/* Navigation Arrow Controls with safe edge spacing */}
+                    {/* Slider Nav Arrows */}
                     <button
                         onClick={handlePrev}
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white shadow-lg backdrop-blur-md transition hover:bg-black/75 hover:scale-110 active:scale-95"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white shadow-lg backdrop-blur-md transition hover:bg-black/70 hover:scale-110 active:scale-95"
                         title="Previous Slide"
                     >
                         <ChevronLeft className="h-5 w-5" />
                     </button>
                     <button
                         onClick={handleNext}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white shadow-lg backdrop-blur-md transition hover:bg-black/75 hover:scale-110 active:scale-95"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white shadow-lg backdrop-blur-md transition hover:bg-black/70 hover:scale-110 active:scale-95"
                         title="Next Slide"
                     >
                         <ChevronRight className="h-5 w-5" />
                     </button>
                 </div>
 
-                {/* Carousel Indicator Dots */}
-                <div className="flex justify-center gap-1.5 bg-black/90 py-2.5">
+                {/* Dot Indicators */}
+                <div className="flex justify-center gap-2 bg-[#090d16] py-3">
                     {banners.map((_, idx) => (
                         <button
                             key={idx}
                             onClick={() => setCurrentIndex(idx)}
                             className={`h-1.5 rounded-full transition-all ${
-                                currentIndex === idx ? 'w-7 bg-orange-500' : 'w-2 bg-white/40 hover:bg-white/70'
+                                currentIndex === idx ? 'w-8 bg-orange-500' : 'w-2 bg-white/30 hover:bg-white/60'
                             }`}
                         />
                     ))}
                 </div>
             </div>
 
-            {/* Wide Sponsored Banner (Matching Mivi One 5G Banner in User Screenshot) */}
-            <div className="mt-4 overflow-hidden rounded-3xl border border-amber-500/40 bg-gradient-to-r from-gray-950 via-zinc-900 to-gray-950 p-5 text-white shadow-xl sm:p-6">
-                <div className="relative flex flex-col items-center justify-between gap-4 md:flex-row">
-                    <div className="space-y-1.5 text-center md:text-left">
-                        <span className="inline-block rounded-md border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-400">
-                            AD • FESTIVE SPECIAL
-                        </span>
-                        <h3 className="text-xl font-black text-white sm:text-2xl">
-                            Mivi One 5G Smartphone
-                        </h3>
-                        <p className="text-2xl font-black text-amber-400 sm:text-3xl">
-                            From ₹11,999*
-                        </p>
-                        <p className="text-xs font-semibold text-gray-400">
-                            120Hz Ultra Smooth Display • 50MP AI Camera • Frosted Back Design
-                        </p>
+            {/* Modern Enterprise 3-Feature Value Bar */}
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="flex items-center gap-3.5 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600 shrink-0">
+                        <Sparkles className="h-5 w-5" />
                     </div>
+                    <div>
+                        <h4 className="text-xs font-black text-gray-900">AI Shopping Assistant</h4>
+                        <p className="text-[11px] text-gray-500">Live inventory recommendations</p>
+                    </div>
+                </div>
 
-                    <div className="flex items-center gap-4">
-                        <img
-                            src="https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=80"
-                            alt="Mivi One 5G"
-                            className="h-24 w-36 rounded-2xl object-cover shadow-lg border border-white/20"
-                        />
-                        <Link
-                            to="/shop?category=Mobiles"
-                            className="rounded-xl bg-orange-500 px-6 py-3 text-xs font-black uppercase tracking-wider text-white shadow-lg transition hover:bg-orange-600 hover:scale-105 active:scale-95"
-                        >
-                            Explore →
-                        </Link>
+                <div className="flex items-center gap-3.5 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
+                        <Scale className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h4 className="text-xs font-black text-gray-900">Side-by-Side Comparison</h4>
+                        <p className="text-[11px] text-gray-500">Compare specs & find value winners</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3.5 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
+                        <Zap className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h4 className="text-xs font-black text-gray-900">Real-Time Updates</h4>
+                        <p className="text-[11px] text-gray-500">Instant price drops & order tracking</p>
                     </div>
                 </div>
             </div>

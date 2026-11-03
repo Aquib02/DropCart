@@ -130,23 +130,25 @@ const ProductCard = ({ product }) => {
 
                 {/* Title */}
                 <Link to={`/product/${product._id}`}>
-                    <h3 className="mt-0.5 line-clamp-1 text-xs font-bold text-gray-900 transition hover:text-blue-600 sm:text-sm">
+                    <h3 className="mt-0.5 line-clamp-1 text-xs font-bold text-gray-900 transition hover:text-orange-600 sm:text-sm">
                         {product.name}
                     </h3>
                 </Link>
 
-                {/* Rating Pill (Flipkart Green Pill) */}
-                <div className="mt-1.5 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-1.5 py-0.5 text-[10px] font-black text-white">
-                        <span>{product.rating ? product.rating.toFixed(1) : '4.5'}</span>
-                        <Star className="h-2.5 w-2.5 fill-current" />
+                {/* Rating */}
+                <div className="mt-1.5 flex items-center gap-1.5">
+                    <div className="flex items-center text-amber-500">
+                        <Star className="h-3 w-3 fill-current" />
+                    </div>
+                    <span className="text-xs font-black text-gray-900">
+                        {product.rating ? product.rating.toFixed(1) : '4.5'}
                     </span>
-                    <span className="text-[10px] font-semibold text-gray-400">
+                    <span className="text-[10px] text-gray-400">
                         ({product.numReviews ? product.numReviews.toLocaleString() : '120'})
                     </span>
                 </div>
 
-                {/* Flipkart Price Strip: ₹SellingPrice  ₹MRP  %off */}
+                {/* Price Strip */}
                 <div className="mt-2 flex items-baseline gap-2">
                     <span className="text-base font-black text-gray-950 sm:text-lg">
                         ₹{product.price?.toLocaleString()}
@@ -157,7 +159,7 @@ const ProductCard = ({ product }) => {
                         </span>
                     )}
                     {discount > 0 && (
-                        <span className="text-xs font-black text-emerald-600">
+                        <span className="text-xs font-black text-orange-600">
                             {discount}% off
                         </span>
                     )}

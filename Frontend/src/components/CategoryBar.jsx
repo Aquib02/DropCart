@@ -7,30 +7,21 @@ import {
     Sparkle,
     Home as HomeIcon,
     Tv,
-    Baby,
-    Apple,
-    Car,
     Dumbbell,
     Armchair,
-    BookOpen,
-    Bike,
+    Compass,
 } from 'lucide-react';
 
 const categories = [
-    { id: 'All', name: 'For You', icon: Sparkles, color: 'text-blue-600 bg-blue-50' },
-    { id: 'Fashion', name: 'Fashion', icon: Shirt, color: 'text-rose-600 bg-rose-50' },
-    { id: 'Mobiles', name: 'Mobiles', icon: Smartphone, color: 'text-indigo-600 bg-indigo-50' },
-    { id: 'Electronics', name: 'Electronics', icon: Laptop, color: 'text-sky-600 bg-sky-50' },
-    { id: 'Beauty', name: 'Beauty', icon: Sparkle, color: 'text-pink-600 bg-pink-50' },
-    { id: 'Home', name: 'Home', icon: HomeIcon, color: 'text-amber-600 bg-amber-50' },
-    { id: 'Appliances', name: 'Appliances', icon: Tv, color: 'text-orange-600 bg-orange-50' },
-    { id: 'Toys', name: 'Toys, Baby', icon: Baby, color: 'text-teal-600 bg-teal-50' },
-    { id: 'Food', name: 'Food & Health', icon: Apple, color: 'text-emerald-600 bg-emerald-50' },
-    { id: 'Auto', name: 'Auto Acc...', icon: Car, color: 'text-gray-700 bg-gray-100' },
-    { id: 'Sports & Fitness', name: 'Sports & ...', icon: Dumbbell, color: 'text-red-600 bg-red-50' },
-    { id: 'Furniture', name: 'Furniture', icon: Armchair, color: 'text-amber-700 bg-amber-50' },
-    { id: 'Books', name: 'Books', icon: BookOpen, color: 'text-purple-600 bg-purple-50' },
-    { id: '2 Wheelers', name: '2 Wheele...', icon: Bike, color: 'text-green-600 bg-green-50' },
+    { id: 'All', name: 'All Collection', icon: Compass },
+    { id: 'Mobiles', name: 'Smartphones & 5G', icon: Smartphone },
+    { id: 'Electronics', name: 'Laptops & Tech', icon: Laptop },
+    { id: 'Fashion', name: 'Fashion & Wear', icon: Shirt },
+    { id: 'Home', name: 'Home & Living', icon: HomeIcon },
+    { id: 'Appliances', name: 'Smart Appliances', icon: Tv },
+    { id: 'Beauty', name: 'Beauty & Care', icon: Sparkle },
+    { id: 'Sports & Fitness', name: 'Sports & Gear', icon: Dumbbell },
+    { id: 'Furniture', name: 'Modern Furniture', icon: Armchair },
 ];
 
 const CategoryBar = ({ selectedCategory = 'All', onSelectCategory }) => {
@@ -49,9 +40,9 @@ const CategoryBar = ({ selectedCategory = 'All', onSelectCategory }) => {
     };
 
     return (
-        <section className="border-b border-gray-200/80 bg-white shadow-sm">
-            <div className="mx-auto max-w-7xl overflow-x-auto px-4 py-3 sm:px-6">
-                <div className="flex min-w-max items-center justify-between gap-6 sm:justify-center sm:gap-8">
+        <section className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-[69px] z-40">
+            <div className="mx-auto max-w-7xl overflow-x-auto px-4 py-2.5 sm:px-6 no-scrollbar">
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-max">
                     {categories.map((cat) => {
                         const Icon = cat.icon;
                         const isSelected = selectedCategory === cat.id;
@@ -60,28 +51,16 @@ const CategoryBar = ({ selectedCategory = 'All', onSelectCategory }) => {
                             <button
                                 key={cat.id}
                                 onClick={() => handleClick(cat.id)}
-                                className="group flex flex-col items-center gap-1.5 transition focus:outline-none"
+                                className={`group flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${
+                                    isSelected
+                                        ? 'bg-gray-900 text-white shadow-sm ring-1 ring-gray-900'
+                                        : 'bg-gray-50/90 text-gray-600 hover:bg-gray-100 hover:text-gray-950 border border-gray-200/60'
+                                }`}
                             >
-                                <div
-                                    className={`flex h-11 w-11 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-110 ${
-                                        cat.color
-                                    } ${
-                                        isSelected
-                                            ? 'ring-2 ring-orange-500 ring-offset-2'
-                                            : 'shadow-sm'
-                                    }`}
-                                >
-                                    <Icon className="h-5 w-5" />
-                                </div>
-                                <span
-                                    className={`text-[11px] font-bold tracking-tight transition ${
-                                        isSelected
-                                            ? 'border-b-2 border-orange-500 text-orange-600 pb-0.5'
-                                            : 'text-gray-700 group-hover:text-orange-600'
-                                    }`}
-                                >
-                                    {cat.name}
-                                </span>
+                                <Icon className={`h-3.5 w-3.5 transition-colors ${
+                                    isSelected ? 'text-orange-400' : 'text-gray-400 group-hover:text-orange-500'
+                                }`} />
+                                <span>{cat.name}</span>
                             </button>
                         );
                     })}

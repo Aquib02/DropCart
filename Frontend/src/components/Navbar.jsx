@@ -124,45 +124,36 @@ const Navbar = () => {
                 </div>
             )}
 
-            {/* Main Flipkart-Style Navbar */}
-            <nav className="border-b border-gray-100 bg-white px-4 py-2.5 sm:px-6">
+            {/* Main Modern DropCart Navbar */}
+            <nav className="border-b border-gray-100 bg-white/95 backdrop-blur-md px-4 py-3 sm:px-6">
                 <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 sm:gap-6">
-                    {/* Brand Logo & Flipkart/Travel Pill Switches */}
+                    {/* Brand Logo */}
                     <div className="flex items-center gap-3">
-                        <Link to="/" className="group flex items-center gap-2">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-400 font-black text-gray-950 shadow-sm transition-transform group-hover:scale-105">
-                                🛍️
-                            </span>
-                            <div className="leading-tight">
-                                <span className="text-xl font-black italic tracking-tight text-blue-600">
-                                    Drop<span className="text-amber-500">Cart</span>
+                        <Link to="/" className="group flex items-center gap-2.5">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-black shadow-md shadow-orange-500/20 transition-transform group-hover:scale-105">
+                                <ShoppingBag className="h-5 w-5" />
+                            </div>
+                            <div className="leading-none">
+                                <span className="text-xl font-black tracking-tight text-gray-900">
+                                    Drop<span className="text-orange-500">Cart</span>
                                 </span>
-                                <span className="block text-[9px] font-black italic tracking-widest text-gray-400">
-                                    Explore <span className="text-amber-500 font-bold">Plus ✦</span>
+                                <span className="block text-[10px] font-bold tracking-widest text-gray-400 uppercase mt-0.5">
+                                    AI STORE
                                 </span>
                             </div>
                         </Link>
-
-                        {/* Travel Quick Switch (Matching Screenshot) */}
-                        <Link
-                            to="/shop?category=Electronics"
-                            className="hidden items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50/80 px-3 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-orange-50 hover:text-orange-600 md:flex"
-                        >
-                            <Plane className="h-3.5 w-3.5 text-orange-500" />
-                            <span>Travel & Flights</span>
-                        </Link>
                     </div>
 
-                    {/* Search Bar with Live Suggestions Dropdown (Prominent, matching screenshot) */}
+                    {/* Search Bar with Live Suggestions Dropdown */}
                     <div className="relative flex-1 max-w-xl">
                         <form
                             onSubmit={searchHandler}
-                            className="flex items-center rounded-2xl border border-blue-500/30 bg-blue-50/30 px-3.5 py-2 text-xs transition focus-within:border-blue-600 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100"
+                            className="flex items-center rounded-2xl border border-gray-200 bg-gray-50/80 px-3.5 py-2 text-xs transition focus-within:border-orange-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-orange-500/10"
                         >
-                            <Search className="mr-2.5 h-4 w-4 shrink-0 text-blue-500" />
+                            <Search className="mr-2.5 h-4 w-4 shrink-0 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search for Products, Brands and More"
+                                placeholder="Search products, brands, categories..."
                                 value={searchQuery}
                                 onFocus={() => suggestions.products.length > 0 && setShowSuggestions(true)}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -268,7 +259,7 @@ const Navbar = () => {
                     {/* Delivery Location Selector (Matching Screenshot) */}
                     <button
                         onClick={() => setShowLocationModal(true)}
-                        className="hidden items-center gap-1.5 text-left text-xs font-semibold text-gray-700 transition hover:text-blue-600 lg:flex"
+                        className="hidden items-center gap-1.5 text-left text-xs font-semibold text-gray-700 transition hover:text-orange-600 lg:flex"
                     >
                         <MapPin className="h-4 w-4 text-orange-500" />
                         <div>
@@ -278,12 +269,6 @@ const Navbar = () => {
                             </span>
                         </div>
                     </button>
-
-                    {/* SuperCoins Badge (Matching Screenshot) */}
-                    <div className="hidden items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-black text-amber-700 sm:flex">
-                        <Coins className="h-3.5 w-3.5 text-amber-500 fill-current" />
-                        <span>{userCoins}</span>
-                    </div>
 
                     {/* Right Nav Actions: User Account, Compare, Wishlist, Cart */}
                     <div className="flex items-center gap-2 sm:gap-3">
@@ -381,15 +366,15 @@ const Navbar = () => {
                             )}
                         </div>
 
-                        {/* Cart Button with Count Badge (Matching Screenshot) */}
+                        {/* Cart Button */}
                         <Link
                             to="/cart"
-                            className="flex items-center gap-2 rounded-xl bg-blue-50/50 px-3 py-2 text-xs font-bold text-gray-800 transition hover:bg-blue-100/60"
+                            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white px-3.5 py-2 text-xs font-bold shadow-md shadow-orange-500/20 hover:shadow-orange-500/30 transition hover:scale-105 active:scale-95"
                         >
                             <div className="relative">
-                                <ShoppingBag className="h-5 w-5 text-blue-600" />
+                                <ShoppingBag className="h-4 w-4" />
                                 {totalCount > 0 && (
-                                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-black text-white shadow-sm">
+                                    <span className="absolute -right-2 -top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-white text-orange-600 px-1 text-[9px] font-black shadow-sm">
                                         {totalCount}
                                     </span>
                                 )}
