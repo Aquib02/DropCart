@@ -4,12 +4,20 @@ export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState(() => {
-        const savedCart = localStorage.getItem('cartItems');
-        return savedCart ? JSON.parse(savedCart) : [];
+        try {
+            const savedCart = localStorage.getItem('cartItems');
+            return savedCart ? JSON.parse(savedCart) : [];
+        } catch {
+            return [];
+        }
     });
 
     useEffect(() => {
-        localStorage.setItem('cartItems', JSON.stringify(cartItems));
+        try {
+            localStorage.setItem('cartItems', JSON.stringify(cartItems));
+        } catch (e) {
+            console.error('Failed to save cart to localStorage', e);
+        }
     }, [cartItems]);
 
     // Add item to cart or increment quantity
@@ -31,7 +39,8 @@ export const CartProvider = ({ children }) => {
                         name: product.name,
                         image: product.image,
                         price: product.price,
-                        countInStock: product.countInStock,
+                        countInStock: product.countInStock !== undefined ? product.countInStock : 10,
+                        category: product.category,
                         qty,
                     },
                 ];
@@ -39,11 +48,11 @@ export const CartProvider = ({ children }) => {
         });
     };
 
-    // Update item quantity directly from dropdown
+    // Update item quantity directly
     const updateCartQty = (productId, qty) => {
         setCartItems((prevItems) =>
             prevItems.map((item) =>
-                item.product === productId ? { ...item, qty } : item
+                item.product === productId ? { ...item, qty: Math.max(1, qty) } : item
             )
         );
     };
@@ -59,14 +68,25 @@ export const CartProvider = ({ children }) => {
         localStorage.removeItem('cartItems');
     };
 
-    // Calculate total price
+    // Total price
     const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+
+    // Total item count for Navbar badge
+    const totalCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
 
     return (
         <CartContext.Provider
-            value={{ cartItems, addToCart, updateCartQty, removeFromCart, clearCart, totalPrice }}
+            value={{
+                cartItems,
+                addToCart,
+                updateCartQty,
+                removeFromCart,
+                clearCart,
+                totalPrice,
+                totalCount,
+            }}
         >
             {children}
-  S      </CartContext.Provider>
+        </CartContext.Provider>
     );
 };

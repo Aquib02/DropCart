@@ -9,9 +9,13 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUser = JSON.parse(localStorage.getItem('userInfo'));
+        const storedUser = localStorage.getItem('userInfo');
         if (storedUser) {
-            setUser(storedUser);
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch {
+                localStorage.removeItem('userInfo');
+            }
         }
         setLoading(false);
     }, []);
@@ -53,11 +57,28 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // New: Update User Info Function (Profile update ke baad call hoga)
+    // Update User Info Function
     const updateUser = (updatedData) => {
         const newUserInfo = { ...user, ...updatedData };
         setUser(newUserInfo);
         localStorage.setItem('userInfo', JSON.stringify(newUserInfo));
+    };
+
+    // Refresh User Profile from server
+    const refreshProfile = async () => {
+        if (!user || !user.token) return;
+        try {
+            const config = {
+                headers: { Authorization: `Bearer ${user.token}` },
+            };
+            const { data } = await axios.get(`${API_BASE_URL}/api/users/profile`, config);
+            updateUser({
+                ...data,
+                token: user.token,
+            });
+        } catch (error) {
+            console.error('Failed to refresh profile', error);
+        }
     };
 
     // Logout Function
@@ -67,7 +88,17 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, updateUser, loading }}>
+        <AuthContext.Provider
+            value={{
+                user,
+                login,
+                register,
+                logout,
+                updateUser,
+                refreshProfile,
+                loading,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );

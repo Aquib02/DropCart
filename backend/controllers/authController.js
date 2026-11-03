@@ -9,26 +9,23 @@ const generateToken = (id) => {
     });
 };
 
-// @desc    Register a new user
-// @route   POST /api/users/register
-// @access  Public
-
-
 // @desc    Auth user & get token (Login)
 // @route   POST /api/users/login
 // @access  Public
 const authUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).populate('wishlist', 'name price image category countInStock isOutOfStock');
 
         if (user && (await bcrypt.compare(password, user.password))) {
             res.json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                role: user.role || (user.isAdmin ? 'admin' : 'customer'),
                 isAdmin: user.isAdmin,
+                permissions: user.permissions || [],
+                wishlist: user.wishlist || [],
                 token: generateToken(user._id),
             });
         } else {
@@ -38,19 +35,27 @@ const authUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Register a new user
+// @route   POST /api/users/register
+// @access  Public
 const registerUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
         const userExists = await User.findOne({ email });
-
         if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: 'User already exists with this email' });
         }
 
-        // Check if database has zero users. If yes, make this first user an Admin!
+        // If this is the very first user in the database, promote to Admin!
         const userCount = await User.countDocuments({});
-        const isAdmin = userCount === 0 ? true : false;
+        const isFirstUser = userCount === 0;
+        const role = isFirstUser ? 'admin' : 'customer';
+        const isAdmin = isFirstUser;
+        const permissions = isFirstUser
+            ? ['manage_products', 'manage_orders', 'manage_appearance', 'manage_staff']
+            : [];
 
         // Hash password
         const salt = await bcrypt.genSalt(10);
@@ -60,7 +65,9 @@ const registerUser = async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            isAdmin, // Automatically true for the first user, false for others
+            role,
+            isAdmin,
+            permissions,
         });
 
         if (user) {
@@ -68,29 +75,39 @@ const registerUser = async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                role: user.role,
                 isAdmin: user.isAdmin,
+                permissions: user.permissions,
+                wishlist: [],
                 token: generateToken(user._id),
             });
         } else {
-            res.status(400).json({ message: 'Invalid user data' });
+            res.status(400).json({ message: 'Invalid user registration data' });
         }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-// @desc    Get user profile
+
+// @desc    Get user profile + wishlist
 // @route   GET /api/users/profile
 // @access  Private
 const getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findById(req.user._id).populate(
+            'wishlist',
+            'name price image category countInStock isOutOfStock'
+        );
 
         if (user) {
             res.json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                role: user.role,
                 isAdmin: user.isAdmin,
+                permissions: user.permissions || [],
+                wishlist: user.wishlist || [],
                 phone: user.phone || '',
                 address: user.address || '',
                 city: user.city || '',
@@ -105,7 +122,9 @@ const getUserProfile = async (req, res) => {
     }
 };
 
-
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
 const updateUserProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
@@ -125,18 +144,25 @@ const updateUserProfile = async (req, res) => {
             }
 
             const updatedUser = await user.save();
+            const populated = await User.findById(updatedUser._id).populate(
+                'wishlist',
+                'name price image category countInStock isOutOfStock'
+            );
 
             res.json({
-                _id: updatedUser._id,
-                name: updatedUser.name,
-                email: updatedUser.email,
-                isAdmin: updatedUser.isAdmin,
-                phone: updatedUser.phone,
-                address: updatedUser.address,
-                city: updatedUser.city,
-                postalCode: updatedUser.postalCode,
-                country: updatedUser.country,
-                token: req.headers.authorization ? req.headers.authorization.split(' ')[1] : '',
+                _id: populated._id,
+                name: populated.name,
+                email: populated.email,
+                role: populated.role,
+                isAdmin: populated.isAdmin,
+                permissions: populated.permissions || [],
+                wishlist: populated.wishlist || [],
+                phone: populated.phone,
+                address: populated.address,
+                city: populated.city,
+                postalCode: populated.postalCode,
+                country: populated.country,
+                token: generateToken(populated._id),
             });
         } else {
             res.status(404).json({ message: 'User not found' });
@@ -146,4 +172,180 @@ const updateUserProfile = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, authUser, getUserProfile, updateUserProfile };
+// @desc    Toggle item in wishlist (Add / Remove)
+// @route   POST /api/users/wishlist/:productId
+// @access  Private
+const toggleWishlist = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        const { productId } = req.params;
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const isExist = user.wishlist.some(
+            (id) => id.toString() === productId.toString()
+        );
+
+        if (isExist) {
+            user.wishlist = user.wishlist.filter(
+                (id) => id.toString() !== productId.toString()
+            );
+        } else {
+            user.wishlist.push(productId);
+        }
+
+        await user.save();
+        const updatedUser = await User.findById(user._id).populate(
+            'wishlist',
+            'name price image category countInStock isOutOfStock'
+        );
+
+        res.json({
+            message: isExist ? 'Removed from wishlist' : 'Added to wishlist',
+            wishlist: updatedUser.wishlist,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// ==========================================
+// STAFF & ROLE MANAGEMENT (Admin Only)
+// ==========================================
+
+// @desc    Get all staff & admin users
+// @route   GET /api/users/staff
+// @access  Private / Admin or Permission manage_staff
+const getAllStaff = async (req, res) => {
+    try {
+        const staff = await User.find({
+            role: { $in: ['admin', 'staff'] },
+        }).select('-password');
+        res.json(staff);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Create a new staff member with custom permissions
+// @route   POST /api/users/staff
+// @access  Private / Admin
+const createStaffUser = async (req, res) => {
+    try {
+        const { name, email, password, role, permissions } = req.body;
+
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            return res.status(400).json({ message: 'User with this email already exists' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password || 'Staff@1234', salt);
+
+        const staffUser = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            role: role || 'staff',
+            isAdmin: role === 'admin',
+            permissions: permissions || [],
+        });
+
+        res.status(201).json({
+            _id: staffUser._id,
+            name: staffUser.name,
+            email: staffUser.email,
+            role: staffUser.role,
+            isAdmin: staffUser.isAdmin,
+            permissions: staffUser.permissions,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update staff role and permissions
+// @route   PUT /api/users/staff/:id
+// @access  Private / Admin
+const updateStaffPermissions = async (req, res) => {
+    try {
+        const staffUser = await User.findById(req.params.id);
+
+        if (!staffUser) {
+            return res.status(404).json({ message: 'Staff user not found' });
+        }
+
+        // Prevent admin from removing their own admin status accidentally
+        if (staffUser._id.toString() === req.user._id.toString() && req.body.role === 'customer') {
+            return res.status(400).json({ message: 'Cannot demote yourself' });
+        }
+
+        staffUser.name = req.body.name || staffUser.name;
+        staffUser.role = req.body.role || staffUser.role;
+        staffUser.isAdmin = staffUser.role === 'admin';
+        if (req.body.permissions) {
+            staffUser.permissions = req.body.permissions;
+        }
+
+        const updated = await staffUser.save();
+        res.json({
+            _id: updated._id,
+            name: updated.name,
+            email: updated.email,
+            role: updated.role,
+            isAdmin: updated.isAdmin,
+            permissions: updated.permissions,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Delete a staff member
+// @route   DELETE /api/users/staff/:id
+// @access  Private / Admin
+const deleteStaffUser = async (req, res) => {
+    try {
+        const staffUser = await User.findById(req.params.id);
+
+        if (!staffUser) {
+            return res.status(404).json({ message: 'Staff user not found' });
+        }
+
+        if (staffUser._id.toString() === req.user._id.toString()) {
+            return res.status(400).json({ message: 'Cannot delete your own admin account' });
+        }
+
+        await staffUser.deleteOne();
+        res.json({ message: 'Staff user removed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get all registered users / customers
+// @route   GET /api/users
+// @access  Private / Admin
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = {
+    registerUser,
+    authUser,
+    getUserProfile,
+    updateUserProfile,
+    toggleWishlist,
+    getAllStaff,
+    createStaffUser,
+    updateStaffPermissions,
+    deleteStaffUser,
+    getAllUsers,
+};

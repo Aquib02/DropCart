@@ -1,19 +1,41 @@
-const express = require ('express');
+const express = require('express');
 const router = express.Router();
 const {
     registerUser,
     authUser,
     getUserProfile,
     updateUserProfile,
+    toggleWishlist,
+    getAllStaff,
+    createStaffUser,
+    updateStaffPermissions,
+    deleteStaffUser,
+    getAllUsers,
 } = require('../controllers/authController');
 
-const {protect} = require('../middleware/authMiddleware');
+const { protect, admin, hasPermission } = require('../middleware/authMiddleware');
 
-router.post('/register',registerUser);
-router.post('/login',authUser);
-router.get('/profile', protect, getUserProfile);
-router.put('/profile',protect, updateUserProfile)
+// Public Auth routes
+router.post('/register', registerUser);
+router.post('/login', authUser);
 
+// Private User & Profile routes
+router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
 
+// Wishlist toggle route
+router.post('/wishlist/:productId', protect, toggleWishlist);
+
+// Admin & Staff Management (RBAC) routes
+router
+    .route('/staff')
+    .get(protect, hasPermission('manage_staff'), getAllStaff)
+    .post(protect, admin, createStaffUser);
+
+router
+    .route('/staff/:id')
+    .put(protect, admin, updateStaffPermissions)
+    .delete(protect, admin, deleteStaffUser);
+
+router.get('/', protect, admin, getAllUsers);
 
 module.exports = router;

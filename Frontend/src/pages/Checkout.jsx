@@ -1,6 +1,7 @@
-import { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useContext } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
@@ -14,27 +15,46 @@ const Checkout = () => {
     const [address, setAddress] = useState('');
     const [city, setCity] = useState('');
     const [postalCode, setPostalCode] = useState('');
-    const [country, setCountry] = useState('');
+    const [country, setCountry] = useState('India');
     const [paymentMethod, setPaymentMethod] = useState('COD');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [orderSuccess, setOrderSuccess] = useState(false);
+    const [placedOrderId, setPlacedOrderId] = useState(null);
 
-    if (user && user.isAdmin) {
+    // Pre-populate customer details from profile if available
+    useEffect(() => {
+        if (!user) {
+            navigate('/login?redirect=checkout');
+            return;
+        }
+
+        if (user.address) setAddress(user.address);
+        if (user.city) setCity(user.city);
+        if (user.postalCode) setPostalCode(user.postalCode);
+        if (user.country) setCountry(user.country);
+    }, [user, navigate]);
+
+    // Admin restriction guard
+    if (user && (user.isAdmin || user.role === 'admin')) {
         return (
             <div className="min-h-screen bg-[#f8f8f6] px-4 py-16 sm:px-6">
-                <div className="mx-auto max-w-lg rounded-2xl border border-red-100 bg-white p-8 text-center shadow-sm">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-2xl">
+                <div className="mx-auto max-w-lg rounded-3xl border border-rose-100 bg-white p-8 text-center shadow-lg">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-3xl">
                         ⚠️
                     </div>
-
-                    <h2 className="mt-5 text-2xl font-black text-red-600">
-                        Admin Account Restriction
+                    <h2 className="mt-5 text-2xl font-black text-rose-600">
+                        Administrator Restriction
                     </h2>
-
                     <p className="mt-3 text-sm leading-6 text-gray-500">
-                        Admins cannot place orders or use the shopping cart.
-                        Please use an admin panel.
+                        Admin and store owners manage inventory and orders through the Admin Control Center.
                     </p>
+                    <Link
+                        to="/admin/dashboard"
+                        className="mt-6 inline-block rounded-xl bg-orange-500 px-6 py-2.5 text-xs font-bold text-white shadow"
+                    >
+                        Go to Admin Dashboard
+                    </Link>
                 </div>
             </div>
         );
@@ -76,289 +96,261 @@ const Checkout = () => {
                 totalPrice,
             };
 
-            const { data } = await axios.post(
-                `${API_BASE_URL}/api/orders`,
-                orderData,
-                config
-            );
+            const { data } = await axios.post(`${API_BASE_URL}/api/orders`, orderData, config);
 
-            // Clear cart after successful order placement
             clearCart();
             setLoading(false);
-
-            // Redirect to home or order success page
-            alert('Order Placed Successfully!');
-            navigate('/');
+            setPlacedOrderId(data._id);
+            setOrderSuccess(true);
         } catch (err) {
             setLoading(false);
-            setError(
-                err.response?.data?.message || 'Failed to place order'
-            );
+            setError(err.response?.data?.message || 'Failed to place order. Please try again.');
         }
     };
+
+    // If order was successfully placed, display the confirmation screen
+    if (orderSuccess) {
+        return (
+            <div className="min-h-screen bg-[#f8f8f6] px-4 py-16 sm:px-6">
+                <div className="mx-auto max-w-md rounded-3xl border border-emerald-100 bg-white p-8 text-center shadow-xl">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm">
+                        <CheckCircle2 className="h-8 w-8" />
+                    </div>
+
+                    <h2 className="mt-5 text-2xl font-black text-gray-900">
+                        Order Placed Successfully!
+                    </h2>
+
+                    <p className="mt-2 font-mono text-xs text-gray-500">
+                        Order Reference: #{placedOrderId}
+                    </p>
+
+                    <p className="mt-3 text-xs leading-relaxed text-gray-500">
+                        Your order has been recorded and is currently being processed by our store team. You can track real-time delivery status in your Customer Dashboard.
+                    </p>
+
+                    <div className="mt-8 space-y-3">
+                        <Link
+                            to="/customer/dashboard?tab=orders"
+                            className="block w-full rounded-xl bg-orange-500 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600"
+                        >
+                            Track Delivery in Dashboard →
+                        </Link>
+
+                        <Link
+                            to="/shop"
+                            className="block w-full rounded-xl border border-gray-200 bg-white py-3 text-xs font-bold text-gray-700 transition hover:bg-gray-50"
+                        >
+                            Continue Shopping
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#f8f8f6] px-4 py-8 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">
+                <Link
+                    to="/cart"
+                    className="mb-6 inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-orange-600"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Shopping Cart
+                </Link>
 
-                {/* Header */}
                 <div className="mb-8">
                     <div className="mb-2 flex items-center gap-2">
                         <span className="h-1 w-8 rounded-full bg-orange-500" />
-
-                        <p className="text-xs font-bold uppercase tracking-widest text-orange-600">
-                            Secure Checkout
-                        </p>
+                        <span className="text-xs font-bold uppercase tracking-widest text-orange-600">
+                            Safe & Encrypted
+                        </span>
                     </div>
-
-                    <h1 className="text-3xl font-black tracking-tight text-gray-900 sm:text-4xl">
+                    <h1 className="text-3xl font-black tracking-tight text-gray-900">
                         Shipping & Checkout
                     </h1>
-
-                    <p className="mt-2 text-sm text-gray-500">
-                        Enter your delivery details and choose your preferred
-                        payment method.
-                    </p>
                 </div>
 
-                {/* Error */}
                 {error && (
-                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600">
+                    <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-bold text-rose-700">
                         {error}
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+                    {/* Left: Shipping Form */}
+                    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8 lg:col-span-7">
+                        <h2 className="mb-4 text-base font-black text-gray-900">
+                            1. Delivery Address
+                        </h2>
 
-                    {/* Shipping Form */}
-                    <form
-                        onSubmit={submitHandler}
-                        className="rounded-2xl border border-gray-200 bg-white shadow-sm lg:col-span-2"
-                    >
-                        {/* Form Header */}
-                        <div className="rounded-t-2xl bg-[#171717] px-6 py-5 text-white sm:px-8">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500 text-lg">
-                                    📍
-                                </div>
-
-                                <div>
-                                    <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
-                                        Step 1
-                                    </p>
-
-                                    <h2 className="text-lg font-black">
-                                        Shipping Address
-                                    </h2>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-5 p-6 sm:p-8">
-
-                            {/* Address */}
+                        <form onSubmit={submitHandler} className="space-y-4">
                             <div>
-                                <label className="mb-2 block text-sm font-bold text-gray-700">
-                                    Street Address
+                                <label className="mb-1 block text-xs font-bold text-gray-700">
+                                    Street Address / Apartment
                                 </label>
-
                                 <input
                                     type="text"
                                     required
                                     value={address}
-                                    onChange={(e) =>
-                                        setAddress(e.target.value)
-                                    }
-                                    placeholder="Enter your full address"
-                                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-50"
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    placeholder="House / Flat no, Street name"
+                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs outline-none focus:border-orange-500 focus:bg-white"
                                 />
                             </div>
 
-                            {/* City + Postal */}
-                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="mb-2 block text-sm font-bold text-gray-700">
+                                    <label className="mb-1 block text-xs font-bold text-gray-700">
                                         City
                                     </label>
-
                                     <input
                                         type="text"
                                         required
                                         value={city}
-                                        onChange={(e) =>
-                                            setCity(e.target.value)
-                                        }
-                                        placeholder="Enter city"
-                                        className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-50"
+                                        onChange={(e) => setCity(e.target.value)}
+                                        placeholder="City name"
+                                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs outline-none focus:border-orange-500 focus:bg-white"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="mb-2 block text-sm font-bold text-gray-700">
-                                        Postal Code
+                                    <label className="mb-1 block text-xs font-bold text-gray-700">
+                                        Postal Code / PIN
                                     </label>
-
                                     <input
                                         type="text"
                                         required
                                         value={postalCode}
-                                        onChange={(e) =>
-                                            setPostalCode(e.target.value)
-                                        }
-                                        placeholder="Enter postal code"
-                                        className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-50"
+                                        onChange={(e) => setPostalCode(e.target.value)}
+                                        placeholder="PIN Code"
+                                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs outline-none focus:border-orange-500 focus:bg-white"
                                     />
                                 </div>
                             </div>
 
-                            {/* Country */}
                             <div>
-                                <label className="mb-2 block text-sm font-bold text-gray-700">
+                                <label className="mb-1 block text-xs font-bold text-gray-700">
                                     Country
                                 </label>
-
                                 <input
                                     type="text"
                                     required
                                     value={country}
-                                    onChange={(e) =>
-                                        setCountry(e.target.value)
-                                    }
-                                    placeholder="Enter country"
-                                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-50"
+                                    onChange={(e) => setCountry(e.target.value)}
+                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs outline-none focus:border-orange-500 focus:bg-white"
                                 />
                             </div>
 
-                            {/* Payment */}
-                            <div>
-                                <label className="mb-2 block text-sm font-bold text-gray-700">
-                                    Payment Method
-                                </label>
+                            <div className="border-t border-gray-100 pt-6">
+                                <h2 className="mb-4 text-base font-black text-gray-900">
+                                    2. Payment Method
+                                </h2>
 
-                                <div className="relative">
-                                    <select
-                                        value={paymentMethod}
-                                        onChange={(e) =>
-                                            setPaymentMethod(e.target.value)
-                                        }
-                                        className="w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 outline-none transition focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-50"
+                                <div className="grid grid-cols-2 gap-3">
+                                    <label
+                                        className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition ${
+                                            paymentMethod === 'COD'
+                                                ? 'border-orange-500 bg-orange-50/40 text-orange-900'
+                                                : 'border-gray-200 bg-white hover:bg-gray-50'
+                                        }`}
                                     >
-                                        <option value="COD">
-                                            Cash on Delivery (COD)
-                                        </option>
+                                        <input
+                                            type="radio"
+                                            name="paymentMethod"
+                                            value="COD"
+                                            checked={paymentMethod === 'COD'}
+                                            onChange={(e) => setPaymentMethod(e.target.value)}
+                                            className="text-orange-500"
+                                        />
+                                        <div>
+                                            <p className="text-xs font-bold">Cash on Delivery</p>
+                                            <p className="text-[10px] text-gray-500">Pay when arrived</p>
+                                        </div>
+                                    </label>
 
-                                        <option value="Online">
-                                            Online Payment
-                                        </option>
-                                    </select>
-
-                                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                        ▼
-                                    </span>
+                                    <label
+                                        className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition ${
+                                            paymentMethod === 'Online'
+                                                ? 'border-orange-500 bg-orange-50/40 text-orange-900'
+                                                : 'border-gray-200 bg-white hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="paymentMethod"
+                                            value="Online"
+                                            checked={paymentMethod === 'Online'}
+                                            onChange={(e) => setPaymentMethod(e.target.value)}
+                                            className="text-orange-500"
+                                        />
+                                        <div>
+                                            <p className="text-xs font-bold">Instant Online Pay</p>
+                                            <p className="text-[10px] text-gray-500">UPI / Cards</p>
+                                        </div>
+                                    </label>
                                 </div>
                             </div>
 
-                            {/* Place Order */}
-                            <div className="border-t border-gray-100 pt-5">
+                            <div className="pt-4">
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full rounded-lg bg-orange-500 py-3.5 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-orange-600 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="w-full rounded-2xl bg-orange-500 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-orange-600 disabled:opacity-50"
                                 >
-                                    {loading
-                                        ? 'Processing...'
-                                        : 'Place Order →'}
+                                    {loading ? 'Processing Order...' : `Confirm Order • ₹${totalPrice}`}
                                 </button>
                             </div>
+                        </form>
+                    </div>
 
-                            <div className="flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-                                <span className="text-green-500">✓</span>
-                                Your information is securely processed
-                            </div>
-                        </div>
-                    </form>
+                    {/* Right: Order Summary Sidebar */}
+                    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-5">
+                        <h2 className="mb-4 text-base font-black text-gray-900">Order Summary</h2>
 
-                    {/* Order Summary */}
-                    <div className="sticky top-24 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-
-                        {/* Summary Header */}
-                        <div className="bg-[#171717] px-5 py-5 text-white">
-                            <p className="text-xs font-bold uppercase tracking-widest text-orange-400">
-                                Your Order
-                            </p>
-
-                            <h2 className="mt-1 text-xl font-black">
-                                Order Summary
-                            </h2>
-                        </div>
-
-                        <div className="p-5">
-
-                            {/* Items */}
-                            <div className="max-h-72 space-y-4 overflow-y-auto pr-1">
-                                {cartItems.map((item) => (
-                                    <div
-                                        key={item.product}
-                                        className="flex items-center gap-3"
-                                    >
-                                        <div className="relative shrink-0">
-                                            <img
-                                                src={item.image}
-                                                alt={item.name}
-                                                className="h-14 w-14 rounded-lg border border-gray-100 object-cover"
-                                            />
-
-                                            <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#171717] px-1 text-[9px] font-bold text-white">
-                                                {item.qty}
-                                            </span>
-                                        </div>
-
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-xs font-bold text-gray-800">
+                        <div className="max-h-72 divide-y divide-gray-100 overflow-y-auto pr-1">
+                            {cartItems.map((item) => (
+                                <div
+                                    key={item.product}
+                                    className="flex items-center justify-between py-3"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className="h-12 w-12 rounded-xl object-cover"
+                                        />
+                                        <div>
+                                            <p className="line-clamp-1 text-xs font-bold text-gray-900">
                                                 {item.name}
                                             </p>
-
-                                            <p className="mt-1 text-[10px] text-gray-400">
-                                                ₹{item.price} × {item.qty}
+                                            <p className="text-[10px] text-gray-400">
+                                                Qty: {item.qty} × ₹{item.price}
                                             </p>
                                         </div>
-
-                                        <p className="shrink-0 text-sm font-bold text-gray-900">
-                                            ₹{item.price * item.qty}
-                                        </p>
                                     </div>
-                                ))}
+                                    <p className="text-xs font-black text-gray-900">
+                                        ₹{item.price * item.qty}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-6 border-t border-gray-100 pt-4 space-y-2 text-xs">
+                            <div className="flex justify-between text-gray-500">
+                                <span>Items Subtotal</span>
+                                <span className="font-bold text-gray-900">₹{totalPrice}</span>
                             </div>
 
-                            {/* Total */}
-                            <div className="mt-5 border-t border-gray-100 pt-5">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm font-semibold text-gray-600">
-                                        Total Amount
-                                    </span>
-
-                                    <span className="text-2xl font-black text-orange-600">
-                                        ₹{totalPrice.toFixed(2)}
-                                    </span>
-                                </div>
+                            <div className="flex justify-between text-gray-500">
+                                <span>Express Delivery</span>
+                                <span className="font-bold text-emerald-600">FREE</span>
                             </div>
 
-                            {/* Trust badges */}
-                            <div className="mt-5 space-y-2 border-t border-gray-100 pt-5">
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span className="text-green-500">✓</span>
-                                    Secure checkout
-                                </div>
-
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span className="text-green-500">✓</span>
-                                    Quality products
-                                </div>
-
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span className="text-green-500">✓</span>
-                                    Easy order tracking
-                                </div>
+                            <div className="border-t border-gray-100 pt-3 flex justify-between text-sm">
+                                <span className="font-black text-gray-900">Final Total</span>
+                                <span className="font-black text-orange-600">₹{totalPrice}</span>
                             </div>
                         </div>
                     </div>

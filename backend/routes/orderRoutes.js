@@ -1,4 +1,4 @@
-const express = require ('express');
+const express = require('express');
 const router = express.Router();
 
 const {
@@ -7,14 +7,27 @@ const {
     getMyOrders,
     getOrders,
     updateOrderStatus,
+    getOrderStats,
 } = require('../controllers/orderController');
 
-const {protect, admin}= require('../middleware/authMiddleware');
+const { protect, hasPermission } = require('../middleware/authMiddleware');
 
-router.route('/').post(protect, addOrderItems).get(protect,admin,getOrders);
-router.route('/myorders').get(protect, getMyOrders);
+// Order creation and listing
+router
+    .route('/')
+    .post(protect, addOrderItems)
+    .get(protect, hasPermission('manage_orders'), getOrders);
+
+// Statistics for Dashboard
+router.get('/stats', protect, hasPermission('manage_orders'), getOrderStats);
+
+// Customer personal orders
+router.get('/myorders', protect, getMyOrders);
+
+// Order by ID
 router.route('/:id').get(protect, getOrderById);
-router.route('/:id/status').put(protect, admin, updateOrderStatus);
 
+// Update status
+router.route('/:id/status').put(protect, hasPermission('manage_orders'), updateOrderStatus);
 
 module.exports = router;
