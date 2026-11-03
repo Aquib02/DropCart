@@ -51,54 +51,91 @@ body {
 
 /* Universal Storefront Dynamic Color Overrides */
 [data-theme] .bg-orange-500,
-[data-theme] .bg-amber-500 {
+[data-theme] .bg-amber-500,
+[data-theme] .bg-orange-600,
+[data-theme] .bg-amber-600,
+[data-theme] .bg-orange-400 {
   background-color: var(--theme-primary) !important;
 }
 
 [data-theme] .hover\:bg-orange-600:hover,
-[data-theme] .hover\:bg-amber-600:hover {
+[data-theme] .hover\:bg-amber-600:hover,
+[data-theme] .hover\:bg-orange-700:hover,
+[data-theme] .hover\:bg-amber-700:hover,
+[data-theme] .hover\:bg-orange-500:hover {
   background-color: var(--theme-hover) !important;
 }
 
+[data-theme] .text-orange-300,
+[data-theme] .text-amber-300,
+[data-theme] .text-orange-400,
+[data-theme] .text-amber-400,
 [data-theme] .text-orange-500,
 [data-theme] .text-orange-600,
 [data-theme] .text-amber-500,
-[data-theme] .text-amber-600 {
+[data-theme] .text-amber-600,
+[data-theme] .text-orange-700 {
   color: var(--theme-primary) !important;
 }
 
 [data-theme] .hover\:text-orange-600:hover,
-[data-theme] .hover\:text-orange-500:hover {
+[data-theme] .hover\:text-orange-500:hover,
+[data-theme] .hover\:text-amber-600:hover,
+[data-theme] .hover\:text-amber-500:hover,
+[data-theme] .hover\:text-orange-400:hover {
   color: var(--theme-hover) !important;
 }
 
 [data-theme] .border-orange-500,
-[data-theme] .border-amber-500 {
+[data-theme] .border-amber-500,
+[data-theme] .border-orange-400,
+[data-theme] .border-amber-400,
+[data-theme] .border-orange-600 {
   border-color: var(--theme-primary) !important;
 }
 
+[data-theme] .focus\:border-orange-500:focus,
+[data-theme] .focus\:border-amber-500:focus,
+[data-theme] .focus\:border-orange-600:focus {
+  border-color: var(--theme-primary) !important;
+}
+
+[data-theme] .focus\:ring-orange-500:focus,
+[data-theme] .focus\:ring-amber-500:focus,
+[data-theme] .focus\:ring-orange-400:focus {
+  --tw-ring-color: var(--theme-primary) !important;
+}
+
 [data-theme] .bg-orange-50,
-[data-theme] .bg-amber-50 {
+[data-theme] .bg-amber-50,
+[data-theme] .bg-orange-100,
+[data-theme] .bg-amber-100 {
   background-color: var(--theme-light) !important;
 }
 
 [data-theme] .border-orange-200,
-[data-theme] .border-amber-200 {
+[data-theme] .border-amber-200,
+[data-theme] .border-orange-300,
+[data-theme] .border-amber-300 {
   border-color: var(--theme-border) !important;
 }
 
 [data-theme] .from-orange-500,
-[data-theme] .from-amber-500 {
+[data-theme] .from-amber-500,
+[data-theme] .from-orange-600 {
   --tw-gradient-from: var(--theme-primary) var(--tw-gradient-from-position) !important;
 }
 
 [data-theme] .to-amber-500,
-[data-theme] .to-orange-500 {
+[data-theme] .to-orange-500,
+[data-theme] .to-orange-600 {
   --tw-gradient-to: var(--theme-hover) var(--tw-gradient-to-position) !important;
 }
 
 [data-theme] .shadow-orange-500\/20,
 [data-theme] .shadow-orange-500\/25,
-[data-theme] .shadow-orange-500\/30 {
+[data-theme] .shadow-orange-500\/30,
+[data-theme] .shadow-orange-500\/40,
+[data-theme] .shadow-orange-500\/50 {
   --tw-shadow-color: var(--theme-shadow) !important;
 }

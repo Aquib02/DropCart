@@ -20,11 +20,13 @@ import { useSocket } from '../context/SocketContext';
 import { API_BASE_URL } from '../config';
 import { OrderCardSkeleton } from '../components/SkeletonLoader';
 import EmptyState from '../components/EmptyState';
+import { useTheme } from '../context/ThemeContext';
 
 const CustomerDashboard = () => {
     const { user, updateUser } = useContext(AuthContext);
     const { addToCart } = useContext(CartContext);
     const { wishlist, toggleWishlist } = useContext(WishlistContext);
+    const { themeColor } = useTheme() || {};
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
 
@@ -186,11 +188,22 @@ const CustomerDashboard = () => {
     return (
         <div className="min-h-screen bg-[#f8f8f6] px-4 py-8 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-6xl">
-                {/* Customer Greeting Header */}
-                <div className="mb-8 overflow-hidden rounded-3xl bg-[#171717] p-6 text-white shadow-xl sm:p-8">
+                {/* Customer Greeting Header with Dynamic Theme Accent */}
+                <div
+                    className="mb-8 overflow-hidden rounded-3xl p-6 text-white shadow-xl sm:p-8 transition-all duration-300 relative border border-white/10"
+                    style={{
+                        background: 'linear-gradient(135deg, #090d16 0%, #111827 50%, var(--theme-primary, #f97316) 240%)'
+                    }}
+                >
                     <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                         <div className="flex items-center gap-4">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500 text-2xl font-black text-white shadow-lg">
+                            <div
+                                className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-lg transition-transform hover:scale-105"
+                                style={{
+                                    backgroundColor: 'var(--theme-primary, #f97316)',
+                                    boxShadow: '0 10px 25px -5px var(--theme-shadow, rgba(249, 115, 22, 0.4))'
+                                }}
+                            >
                                 {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                             </div>
                             <div>
@@ -198,7 +211,13 @@ const CustomerDashboard = () => {
                                     <h1 className="text-2xl font-black sm:text-3xl">
                                         Welcome, {user.name}
                                     </h1>
-                                    <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-orange-400">
+                                    <span
+                                        className="rounded-full px-2.5 py-0.5 text-xs font-semibold backdrop-blur-md border border-white/10"
+                                        style={{
+                                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                                            color: 'var(--theme-primary, #fb923c)'
+                                        }}
+                                    >
                                         Customer
                                     </span>
                                 </div>
@@ -208,23 +227,23 @@ const CustomerDashboard = () => {
 
                         {/* Quick Stats Banner */}
                         <div className="grid grid-cols-3 gap-3 border-t border-white/10 pt-4 md:border-t-0 md:pt-0">
-                            <div className="rounded-xl bg-white/5 p-3 text-center">
+                            <div className="rounded-xl bg-white/5 p-3 text-center border border-white/5">
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     Total Orders
                                 </p>
                                 <p className="mt-1 text-xl font-black text-white">{orders.length}</p>
                             </div>
 
-                            <div className="rounded-xl bg-white/5 p-3 text-center">
+                            <div className="rounded-xl bg-white/5 p-3 text-center border border-white/5">
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     Active Orders
                                 </p>
-                                <p className="mt-1 text-xl font-black text-orange-400">
+                                <p className="mt-1 text-xl font-black" style={{ color: 'var(--theme-primary, #fb923c)' }}>
                                     {activeOrders.length}
                                 </p>
                             </div>
 
-                            <div className="rounded-xl bg-white/5 p-3 text-center">
+                            <div className="rounded-xl bg-white/5 p-3 text-center border border-white/5">
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                     Wishlist Items
                                 </p>
@@ -239,9 +258,17 @@ const CustomerDashboard = () => {
                             onClick={() => setSearchParams({ tab: 'orders' })}
                             className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
                                 currentTab === 'orders'
-                                    ? 'bg-orange-500 text-white shadow-md'
+                                    ? 'text-white shadow-md'
                                     : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
                             }`}
+                            style={
+                                currentTab === 'orders'
+                                    ? {
+                                          backgroundColor: 'var(--theme-primary, #f97316)',
+                                          boxShadow: '0 8px 20px -4px var(--theme-shadow, rgba(249, 115, 22, 0.4))'
+                                      }
+                                    : {}
+                            }
                         >
                             <ShoppingBag className="h-4 w-4" />
                             My Orders & Tracking ({orders.length})
@@ -251,9 +278,17 @@ const CustomerDashboard = () => {
                             onClick={() => setSearchParams({ tab: 'wishlist' })}
                             className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
                                 currentTab === 'wishlist'
-                                    ? 'bg-orange-500 text-white shadow-md'
+                                    ? 'text-white shadow-md'
                                     : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
                             }`}
+                            style={
+                                currentTab === 'wishlist'
+                                    ? {
+                                          backgroundColor: 'var(--theme-primary, #f97316)',
+                                          boxShadow: '0 8px 20px -4px var(--theme-shadow, rgba(249, 115, 22, 0.4))'
+                                      }
+                                    : {}
+                            }
                         >
                             <Heart className="h-4 w-4" />
                             Saved Wishlist ({wishlist.length})
@@ -263,9 +298,17 @@ const CustomerDashboard = () => {
                             onClick={() => setSearchParams({ tab: 'profile' })}
                             className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
                                 currentTab === 'profile'
-                                    ? 'bg-orange-500 text-white shadow-md'
+                                    ? 'text-white shadow-md'
                                     : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
                             }`}
+                            style={
+                                currentTab === 'profile'
+                                    ? {
+                                          backgroundColor: 'var(--theme-primary, #f97316)',
+                                          boxShadow: '0 8px 20px -4px var(--theme-shadow, rgba(249, 115, 22, 0.4))'
+                                      }
+                                    : {}
+                            }
                         >
                             <User className="h-4 w-4" />
                             Profile & Addresses
@@ -285,7 +328,8 @@ const CustomerDashboard = () => {
                             </div>
                             <Link
                                 to="/shop"
-                                className="flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:underline"
+                                className="flex items-center gap-1.5 text-xs font-bold hover:underline"
+                                style={{ color: 'var(--theme-primary, #ea580c)' }}
                             >
                                 Continue Shopping <ArrowRight className="h-3.5 w-3.5" />
                             </Link>
@@ -360,9 +404,10 @@ const CustomerDashboard = () => {
                                                     {/* Progress bar line */}
                                                     <div className="absolute left-6 right-6 top-5 -z-0 h-1 bg-gray-200 sm:left-10 sm:right-10">
                                                         <div
-                                                            className="h-full bg-emerald-500 transition-all duration-500"
+                                                            className="h-full transition-all duration-500"
                                                             style={{
                                                                 width: `${(currentStageIndex / 3) * 100}%`,
+                                                                backgroundColor: 'var(--theme-primary, #10b981)'
                                                             }}
                                                         />
                                                     </div>
@@ -382,9 +427,17 @@ const CustomerDashboard = () => {
                                                                     <div
                                                                         className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
                                                                             isCompleted
-                                                                                ? 'bg-emerald-500 text-white shadow-md'
+                                                                                ? 'text-white shadow-md'
                                                                                 : 'border-2 border-gray-200 bg-white text-gray-400'
-                                                                        } ${isCurrent ? 'ring-4 ring-emerald-100' : ''}`}
+                                                                        } ${isCurrent ? 'ring-4 ring-offset-2' : ''}`}
+                                                                        style={
+                                                                            isCompleted
+                                                                                ? {
+                                                                                      backgroundColor: 'var(--theme-primary, #10b981)',
+                                                                                      boxShadow: '0 4px 12px var(--theme-shadow, rgba(16, 185, 129, 0.3))'
+                                                                                  }
+                                                                                : {}
+                                                                        }
                                                                     >
                                                                         <Icon className="h-5 w-5" />
                                                                     </div>
@@ -435,7 +488,7 @@ const CustomerDashboard = () => {
 
                                             {/* Shipping Address Footer */}
                                             <div className="flex items-center gap-2 border-t border-gray-100 bg-gray-50/50 p-4 text-xs text-gray-600 sm:px-6">
-                                                <MapPin className="h-4 w-4 shrink-0 text-orange-500" />
+                                                <MapPin className="h-4 w-4 shrink-0" style={{ color: 'var(--theme-primary, #f97316)' }} />
                                                 <span>
                                                     Delivering to: {order.shippingAddress.address},{' '}
                                                     {order.shippingAddress.city},{' '}
@@ -500,7 +553,10 @@ const CustomerDashboard = () => {
                                             </div>
 
                                             <div className="mt-3 flex flex-1 flex-col">
-                                                <span className="text-[10px] font-bold uppercase text-orange-600">
+                                                <span
+                                                    className="text-[10px] font-bold uppercase"
+                                                    style={{ color: 'var(--theme-primary, #ea580c)' }}
+                                                >
                                                     {item.category}
                                                 </span>
                                                 <h4 className="line-clamp-1 text-sm font-bold text-gray-900">
@@ -517,8 +573,16 @@ const CustomerDashboard = () => {
                                                         className={`w-full rounded-xl py-2.5 text-xs font-bold transition ${
                                                             isOutOfStock
                                                                 ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-                                                                : 'bg-orange-500 text-white shadow-sm hover:bg-orange-600'
+                                                                : 'text-white shadow-sm hover:opacity-90'
                                                         }`}
+                                                        style={
+                                                            !isOutOfStock
+                                                                ? {
+                                                                      backgroundColor: 'var(--theme-primary, #f97316)',
+                                                                      boxShadow: '0 4px 14px var(--theme-shadow, rgba(249, 115, 22, 0.3))'
+                                                                  }
+                                                                : {}
+                                                        }
                                                     >
                                                         {isOutOfStock ? 'Out of Stock' : 'Move to Cart →'}
                                                     </button>
@@ -663,7 +727,11 @@ const CustomerDashboard = () => {
                             <button
                                 type="submit"
                                 disabled={savingProfile}
-                                className="rounded-xl bg-orange-500 px-8 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:opacity-50"
+                                className="rounded-xl px-8 py-3 text-xs font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+                                style={{
+                                    backgroundColor: 'var(--theme-primary, #f97316)',
+                                    boxShadow: '0 4px 14px var(--theme-shadow, rgba(249, 115, 22, 0.3))'
+                                }}
                             >
                                 {savingProfile ? 'Saving...' : 'Save Profile Changes'}
                             </button>
