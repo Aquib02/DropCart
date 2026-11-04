@@ -36,6 +36,7 @@ import {
     FileSpreadsheet,
     Layers,
     Sparkles,
+    LayoutTemplate,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
@@ -44,6 +45,7 @@ import AdminCouponsTab from '../components/admin/AdminCouponsTab';
 import AdminCustomersTab from '../components/admin/AdminCustomersTab';
 import AdminReviewsTab from '../components/admin/AdminReviewsTab';
 import AdminCampaignsTab from '../components/admin/AdminCampaignsTab';
+import AdminVisualEditorTab from '../components/admin/AdminVisualEditorTab';
 import { exportOrdersToCSV, exportAnalyticsReportToCSV } from '../utils/exportUtils';
 import { useSocket } from '../context/SocketContext';
 
@@ -640,6 +642,21 @@ const AdminDashboard = () => {
 
                             {can('manage_appearance') && (
                                 <button
+                                    onClick={() => { setActiveTab('visual_editor'); setMobileSidebarOpen(false); }}
+                                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
+                                        activeTab === 'visual_editor'
+                                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                            : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                    } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                    title={isSidebarCollapsed ? 'Homepage Visual Editor' : undefined}
+                                >
+                                    <LayoutTemplate className="h-4 w-4 shrink-0" />
+                                    {!isSidebarCollapsed && <span className="truncate">Visual Editor</span>}
+                                </button>
+                            )}
+
+                            {can('manage_appearance') && (
+                                <button
                                     onClick={() => { setActiveTab('appearance'); setMobileSidebarOpen(false); }}
                                     className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
                                         activeTab === 'appearance'
@@ -740,6 +757,7 @@ const AdminDashboard = () => {
                                 {activeTab === 'orders' && 'Order Fulfillment & Lifecycle'}
                                 {activeTab === 'coupons' && 'Coupon & Promotional Offers'}
                                 {activeTab === 'campaigns' && 'Campaigns & Promotional Advertisements'}
+                                {activeTab === 'visual_editor' && 'Homepage Visual Editor & Section Manager'}
                                 {activeTab === 'appearance' && 'Storefront Theme & Branding'}
                                 {activeTab === 'customers' && 'Customer Relationship Manager'}
                                 {activeTab === 'reviews' && 'Customer Reviews Moderation'}
@@ -1902,6 +1920,9 @@ const AdminDashboard = () => {
 
                 {/* TAB: ADVERTISEMENT & CAMPAIGN MANAGEMENT */}
                 {activeTab === 'campaigns' && <AdminCampaignsTab userToken={user.token} />}
+
+                {/* TAB: HOMEPAGE VISUAL EDITOR */}
+                {activeTab === 'visual_editor' && <AdminVisualEditorTab userToken={user.token} />}
 
                 {/* TAB: REGISTERED CUSTOMERS DIRECTORY */}
                 {activeTab === 'customers' && <AdminCustomersTab userToken={user.token} />}
