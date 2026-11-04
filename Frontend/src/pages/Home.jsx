@@ -13,6 +13,7 @@ import { useSocket } from '../context/SocketContext';
 const Home = () => {
     const [products, setProducts] = useState([]);
     const [settings, setSettings] = useState(null);
+    const [secondaryBanners, setSecondaryBanners] = useState([]);
     const [loading, setLoading] = useState(true);
     const { socket } = useSocket() || {};
 
@@ -24,21 +25,35 @@ const Home = () => {
                 setSettings(updatedSettings);
             }
         };
+        const handleCampaignsUpdate = async () => {
+            try {
+                const { data } = await axios.get(`${API_BASE_URL}/api/campaigns?type=secondary_banner`);
+                if (Array.isArray(data)) setSecondaryBanners(data);
+            } catch {}
+        };
         socket.on('settingsUpdated', handleSettingsUpdate);
-        return () => socket.off('settingsUpdated', handleSettingsUpdate);
+        socket.on('campaignsUpdated', handleCampaignsUpdate);
+        return () => {
+            socket.off('settingsUpdated', handleSettingsUpdate);
+            socket.off('campaignsUpdated', handleCampaignsUpdate);
+        };
     }, [socket]);
 
     useEffect(() => {
         const fetchHomeData = async () => {
             try {
-                const [productRes, settingsRes] = await Promise.all([
+                const [productRes, settingsRes, promoRes] = await Promise.all([
                     axios.get(`${API_BASE_URL}/api/products`).catch(() => ({ data: [] })),
                     axios.get(`${API_BASE_URL}/api/settings`).catch(() => null),
+                    axios.get(`${API_BASE_URL}/api/campaigns?type=secondary_banner`).catch(() => ({ data: [] })),
                 ]);
 
                 setProducts(Array.isArray(productRes?.data) ? productRes.data : []);
                 if (settingsRes?.data) {
                     setSettings(settingsRes.data);
+                }
+                if (Array.isArray(promoRes?.data)) {
+                    setSecondaryBanners(promoRes.data);
                 }
             } catch (error) {
                 console.error('Error fetching home data:', error);
@@ -133,6 +148,56 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Promotional Secondary Banners (Phase 2 Campaign Engine) */}
+            {secondaryBanners.length > 0 && (
+                <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {secondaryBanners.map((banner) => (
+                            <Link
+                                key={banner._id}
+                                to={banner.ctaLink || '/shop'}
+                                onClick={() => {
+                                    if (banner._id && !banner._id.startsWith('default-')) {
+                                        axios.post(`${API_BASE_URL}/api/campaigns/${banner._id}/click`, {}).catch(() => {});
+                                    }
+                                }}
+                                className="group relative overflow-hidden rounded-3xl border border-gray-200/80 bg-cover bg-center p-6 text-white shadow-sm transition hover:shadow-md"
+                                style={{
+                                    background: banner.bgGradient || 'linear-gradient(135deg, #111827 0%, #1f2937 100%)',
+                                    backgroundImage: banner.desktopImage ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${banner.desktopImage})` : undefined
+                                }}
+                            >
+                                <div className="relative z-10 flex h-full flex-col justify-between">
+                                    <div>
+                                        {banner.badge && (
+                                            <span className="inline-block rounded-full bg-white/20 backdrop-blur-xs px-3 py-1 text-[10px] font-black tracking-wider uppercase text-white mb-2">
+                                                {banner.badge}
+                                            </span>
+                                        )}
+                                        <h3 className="text-lg font-black text-white sm:text-xl group-hover:underline">
+                                            {banner.title}
+                                        </h3>
+                                        {banner.subtitle && (
+                                            <p className="mt-1 text-xs text-gray-200 line-clamp-2">
+                                                {banner.subtitle}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="mt-4 flex items-center justify-between">
+                                        <span className="text-xs font-black text-amber-300">
+                                            {banner.offerText || banner.priceText || 'Limited Time Offer'}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 text-xs font-bold text-white group-hover:translate-x-1 transition-transform">
+                                            {banner.ctaText || 'Shop Now'} <ArrowRight className="h-3.5 w-3.5" />
+                                        </span>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Section 3: Winter Blankets & Home Comfort */}
             <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">

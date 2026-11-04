@@ -43,6 +43,7 @@ import AdminAnalyticsCharts from '../components/admin/AdminAnalyticsCharts';
 import AdminCouponsTab from '../components/admin/AdminCouponsTab';
 import AdminCustomersTab from '../components/admin/AdminCustomersTab';
 import AdminReviewsTab from '../components/admin/AdminReviewsTab';
+import AdminCampaignsTab from '../components/admin/AdminCampaignsTab';
 import { exportOrdersToCSV, exportAnalyticsReportToCSV } from '../utils/exportUtils';
 import { useSocket } from '../context/SocketContext';
 
@@ -624,6 +625,21 @@ const AdminDashboard = () => {
 
                             {can('manage_appearance') && (
                                 <button
+                                    onClick={() => { setActiveTab('campaigns'); setMobileSidebarOpen(false); }}
+                                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
+                                        activeTab === 'campaigns'
+                                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                            : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                    } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                    title={isSidebarCollapsed ? 'Campaigns & Ads' : undefined}
+                                >
+                                    <Sparkles className="h-4 w-4 shrink-0" />
+                                    {!isSidebarCollapsed && <span className="truncate">Campaigns & Ads</span>}
+                                </button>
+                            )}
+
+                            {can('manage_appearance') && (
+                                <button
                                     onClick={() => { setActiveTab('appearance'); setMobileSidebarOpen(false); }}
                                     className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
                                         activeTab === 'appearance'
@@ -723,6 +739,7 @@ const AdminDashboard = () => {
                                 {activeTab === 'products' && 'Inventory & Product Catalog'}
                                 {activeTab === 'orders' && 'Order Fulfillment & Lifecycle'}
                                 {activeTab === 'coupons' && 'Coupon & Promotional Offers'}
+                                {activeTab === 'campaigns' && 'Campaigns & Promotional Advertisements'}
                                 {activeTab === 'appearance' && 'Storefront Theme & Branding'}
                                 {activeTab === 'customers' && 'Customer Relationship Manager'}
                                 {activeTab === 'reviews' && 'Customer Reviews Moderation'}
@@ -1736,7 +1753,14 @@ const AdminDashboard = () => {
                                 <button
                                     type="submit"
                                     disabled={appearanceLoading}
-                                    className="flex items-center gap-2 rounded-xl bg-orange-500 px-8 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:opacity-50"
+                                    style={{
+                                        backgroundColor:
+                                            appearance.themeColor === 'emerald' ? '#059669' :
+                                            appearance.themeColor === 'indigo' ? '#4f46e5' :
+                                            appearance.themeColor === 'rose' ? '#e11d48' :
+                                            appearance.themeColor === 'blue' ? '#0284c7' : '#f97316'
+                                    }}
+                                    className="flex items-center gap-2 rounded-xl px-8 py-3 text-xs font-bold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
                                 >
                                     {appearanceLoading ? (
                                         <>
@@ -1873,8 +1897,11 @@ const AdminDashboard = () => {
                     </div>
                 )}
 
-                {/* TAB: PROMOTIONAL COUPONS & CAMPAIGNS */}
+                {/* TAB: PROMOTIONAL COUPONS */}
                 {activeTab === 'coupons' && <AdminCouponsTab userToken={user.token} />}
+
+                {/* TAB: ADVERTISEMENT & CAMPAIGN MANAGEMENT */}
+                {activeTab === 'campaigns' && <AdminCampaignsTab userToken={user.token} />}
 
                 {/* TAB: REGISTERED CUSTOMERS DIRECTORY */}
                 {activeTab === 'customers' && <AdminCustomersTab userToken={user.token} />}

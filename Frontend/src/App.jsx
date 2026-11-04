@@ -4,6 +4,7 @@ import Footer from './components/Footer';
 import CompareDrawer from './components/CompareDrawer';
 import AIAssistantDrawer from './components/AIAssistantDrawer';
 import ToastNotification from './components/ToastNotification';
+import PromotionalPopup from './components/PromotionalPopup';
 
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -46,6 +47,7 @@ function App() {
                 <CompareDrawer />
                 <AIAssistantDrawer />
                 <ToastNotification />
+                <PromotionalPopup />
                 <Footer />
             </div>
         </Router>

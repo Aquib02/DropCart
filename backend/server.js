@@ -19,6 +19,7 @@ const couponRoutes = require('./routes/couponRoutes.js');
 const priceAlertRoutes = require('./routes/priceAlertRoutes.js');
 const aiRoutes = require('./routes/aiRoutes.js');
 const paymentRoutes = require('./routes/paymentRoutes.js');
+const campaignRoutes = require('./routes/campaignRoutes.js');
 const swaggerDoc = require('./docs/swaggerDoc.js');
 
 connectDB();
@@ -74,6 +75,7 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/alerts', priceAlertRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/campaigns', campaignRoutes);
 app.use('/api/docs', swaggerDoc);
 
 // Health check endpoint
