@@ -109,10 +109,10 @@ const AdminSecurityTab = ({ userToken, currentUser }) => {
         setLoading(true);
         try {
             const [staffRes, auditRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/users/staff`, {
+                axios.get(`${API_BASE_URL}/api/users/staff`, {
                     headers: { Authorization: `Bearer ${userToken}` }
                 }),
-                axios.get(`${API_BASE_URL}/users/audit-logs`, {
+                axios.get(`${API_BASE_URL}/api/users/audit-logs`, {
                     headers: { Authorization: `Bearer ${userToken}` }
                 })
             ]);
@@ -134,7 +134,7 @@ const AdminSecurityTab = ({ userToken, currentUser }) => {
     const handleToggle2FA = async () => {
         try {
             const res = await axios.post(
-                `${API_BASE_URL}/users/toggle-2fa`,
+                `${API_BASE_URL}/api/users/toggle-2fa`,
                 {},
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
@@ -203,14 +203,14 @@ const AdminSecurityTab = ({ userToken, currentUser }) => {
         try {
             if (editingStaff) {
                 await axios.put(
-                    `${API_BASE_URL}/users/staff/${editingStaff._id}`,
+                    `${API_BASE_URL}/api/users/staff/${editingStaff._id}`,
                     formData,
                     { headers: { Authorization: `Bearer ${userToken}` } }
                 );
                 setStatusMessage({ type: 'success', text: `Staff account "${formData.name}" updated successfully.` });
             } else {
                 await axios.post(
-                    `${API_BASE_URL}/users/staff`,
+                    `${API_BASE_URL}/api/users/staff`,
                     formData,
                     { headers: { Authorization: `Bearer ${userToken}` } }
                 );
@@ -228,7 +228,7 @@ const AdminSecurityTab = ({ userToken, currentUser }) => {
     const handleDeleteStaff = async (id, name) => {
         if (!window.confirm(`Are you sure you want to revoke access for ${name}?`)) return;
         try {
-            await axios.delete(`${API_BASE_URL}/users/staff/${id}`, {
+            await axios.delete(`${API_BASE_URL}/api/users/staff/${id}`, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
             setStatusMessage({ type: 'success', text: `Access revoked for ${name}.` });

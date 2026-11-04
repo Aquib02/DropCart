@@ -87,7 +87,7 @@ const AdminSettingsTab = ({ userToken }) => {
     const fetchSettings = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`${API_BASE_URL}/settings`);
+            const res = await axios.get(`${API_BASE_URL}/api/settings`);
             if (res.data) {
                 setSettings(prev => ({
                     ...prev,
@@ -119,7 +119,7 @@ const AdminSettingsTab = ({ userToken }) => {
         setStatusMessage({ type: '', text: '' });
 
         try {
-            const res = await axios.put(`${API_BASE_URL}/settings`, settings, {
+            const res = await axios.put(`${API_BASE_URL}/api/settings`, settings, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
 

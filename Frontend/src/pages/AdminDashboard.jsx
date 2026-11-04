@@ -734,7 +734,7 @@ const AdminDashboard = () => {
                                 title={isSidebarCollapsed ? 'Product Reviews' : undefined}
                             >
                                 <MessageSquare className="h-4 w-4 shrink-0" />
-                                {!isSidebarCollapsed && <span className="truncate">Product Reviews</span>}
+                                {!isSidebarCollapsed && <span className="truncate">Support & Reviews</span>}
                             </button>
 
                             {can('manage_staff') && (
@@ -806,7 +806,7 @@ const AdminDashboard = () => {
                                 {activeTab === 'visual_editor' && 'Homepage Visual Editor & Section Manager'}
                                 {activeTab === 'appearance' && 'Storefront Theme & Branding'}
                                 {activeTab === 'customers' && 'Customer Relationship Manager'}
-                                {activeTab === 'reviews' && 'Customer Reviews Moderation'}
+                                {activeTab === 'reviews' && 'Customer Engagement, Support & Reviews Hub'}
                                 {activeTab === 'staff' && 'Access Control & Staff RBAC'}
                             </h1>
                             <p className="text-[11px] text-gray-400">

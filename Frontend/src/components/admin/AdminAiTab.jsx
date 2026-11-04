@@ -104,7 +104,7 @@ const AdminAiTab = ({ userToken }) => {
 
         try {
             const res = await axios.post(
-                `${API_BASE_URL}/admin-ai/ask`,
+                `${API_BASE_URL}/api/admin-ai/ask`,
                 { query },
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
@@ -146,7 +146,7 @@ const AdminAiTab = ({ userToken }) => {
         setCopyLoading(true);
         try {
             const res = await axios.post(
-                `${API_BASE_URL}/admin-ai/product-copy`,
+                `${API_BASE_URL}/api/admin-ai/product-copy`,
                 copyForm,
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
@@ -167,7 +167,7 @@ const AdminAiTab = ({ userToken }) => {
         setBannerLoading(true);
         try {
             const res = await axios.post(
-                `${API_BASE_URL}/admin-ai/campaign-copy`,
+                `${API_BASE_URL}/api/admin-ai/campaign-copy`,
                 bannerForm,
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
@@ -185,7 +185,7 @@ const AdminAiTab = ({ userToken }) => {
     const fetchDemandForecast = async () => {
         setDemandLoading(true);
         try {
-            const res = await axios.get(`${API_BASE_URL}/admin-ai/demand-forecast`, {
+            const res = await axios.get(`${API_BASE_URL}/api/admin-ai/demand-forecast`, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
             if (res.data.success) {
@@ -203,7 +203,7 @@ const AdminAiTab = ({ userToken }) => {
     const fetchFraudSentinel = async () => {
         setFraudLoading(true);
         try {
-            const res = await axios.get(`${API_BASE_URL}/admin-ai/suspicious-orders`, {
+            const res = await axios.get(`${API_BASE_URL}/api/admin-ai/suspicious-orders`, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
             if (res.data.success) {
@@ -221,7 +221,7 @@ const AdminAiTab = ({ userToken }) => {
     const fetchPromotions = async () => {
         setPromotionsLoading(true);
         try {
-            const res = await axios.get(`${API_BASE_URL}/admin-ai/promotions-suggest`, {
+            const res = await axios.get(`${API_BASE_URL}/api/admin-ai/promotions-suggest`, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
             if (res.data.success) {
