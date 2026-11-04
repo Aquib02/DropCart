@@ -10,6 +10,8 @@ const {
     createStaffUser,
     updateStaffPermissions,
     deleteStaffUser,
+    getAuditLogs,
+    toggleTwoFactor,
     getAllUsers,
 } = require('../controllers/authController');
 
@@ -35,6 +37,10 @@ router
     .route('/staff/:id')
     .put(protect, admin, updateStaffPermissions)
     .delete(protect, admin, deleteStaffUser);
+
+// Audit Logs & Security 2FA
+router.get('/audit-logs', protect, admin, getAuditLogs);
+router.post('/toggle-2fa', protect, toggleTwoFactor);
 
 router.get('/', protect, admin, getAllUsers);
 

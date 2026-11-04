@@ -51,6 +51,8 @@ import AdminProductsTab from '../components/admin/AdminProductsTab';
 import AdminInventoryTab from '../components/admin/AdminInventoryTab';
 import AdminOrdersTab from '../components/admin/AdminOrdersTab';
 import AdminAiTab from '../components/admin/AdminAiTab';
+import AdminSettingsTab from '../components/admin/AdminSettingsTab';
+import AdminSecurityTab from '../components/admin/AdminSecurityTab';
 import { exportOrdersToCSV, exportAnalyticsReportToCSV } from '../utils/exportUtils';
 import { useSocket } from '../context/SocketContext';
 
@@ -1351,7 +1353,8 @@ const AdminDashboard = () => {
                 {activeTab === 'orders' && <AdminOrdersTab userToken={user?.token} />}
 
                 {/* TAB 4: STORE LOOK & APPEARANCE CUSTOMIZER */}
-                {activeTab === 'appearance' && (
+                {activeTab === 'appearance' && <AdminSettingsTab userToken={user.token} />}
+                {false && activeTab === 'appearance' && (
                     <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
                         <div className="mb-6 border-b border-gray-100 pb-4">
                             <h2 className="text-xl font-black text-gray-900">
@@ -1547,7 +1550,8 @@ const AdminDashboard = () => {
                 )}
 
                 {/* TAB 5: STAFF & CUSTOM ROLES (RBAC) */}
-                {activeTab === 'staff' && (
+                {activeTab === 'staff' && <AdminSecurityTab userToken={user.token} currentUser={user} />}
+                {false && activeTab === 'staff' && (
                     <div className="space-y-6">
                         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                             <div>

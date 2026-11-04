@@ -1,6 +1,6 @@
 const StoreSettings = require('../models/storeSettingsModel');
 
-// @desc    Get store appearance settings
+// @desc    Get store configuration and appearance settings
 // @route   GET /api/settings
 // @access  Public
 const getSettings = async (req, res) => {
@@ -15,33 +15,49 @@ const getSettings = async (req, res) => {
     }
 };
 
-// @desc    Update store appearance settings
+// @desc    Update store configuration and appearance settings
 // @route   PUT /api/settings
-// @access  Private / Admin or Staff
+// @access  Private / Admin or Staff with manage_appearance / manage_settings
 const updateSettings = async (req, res) => {
     try {
-        const {
-            announcement,
-            bannerActive,
-            heroTitle,
-            heroSubtitle,
-            heroBadge,
-            themeColor,
-            featuredTag,
-        } = req.body;
-
         let settings = await StoreSettings.findOne().sort({ updatedAt: -1 });
         if (!settings) {
             settings = new StoreSettings();
         }
 
-        if (announcement !== undefined) settings.announcement = announcement;
-        if (bannerActive !== undefined) settings.bannerActive = bannerActive;
-        if (heroTitle !== undefined) settings.heroTitle = heroTitle;
-        if (heroSubtitle !== undefined) settings.heroSubtitle = heroSubtitle;
-        if (heroBadge !== undefined) settings.heroBadge = heroBadge;
-        if (themeColor !== undefined) settings.themeColor = themeColor;
-        if (featuredTag !== undefined) settings.featuredTag = featuredTag;
+        const fields = [
+            'storeName',
+            'tagline',
+            'logoUrl',
+            'faviconUrl',
+            'themeColor',
+            'announcement',
+            'bannerActive',
+            'heroTitle',
+            'heroSubtitle',
+            'heroBadge',
+            'banners',
+            'seo',
+            'shipping',
+            'tax',
+            'paymentMethods',
+            'contact',
+            'socialLinks',
+            'maintenanceMode'
+        ];
+
+        fields.forEach(field => {
+            if (req.body[field] !== undefined) {
+                if (typeof req.body[field] === 'object' && !Array.isArray(req.body[field])) {
+                    settings[field] = {
+                        ...(settings[field]?.toObject ? settings[field].toObject() : settings[field]),
+                        ...req.body[field]
+                    };
+                } else {
+                    settings[field] = req.body[field];
+                }
+            }
+        });
 
         const updated = await settings.save();
 

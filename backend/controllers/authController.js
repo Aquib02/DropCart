@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const AuditLog = require('../models/auditLogModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -249,13 +250,35 @@ const createStaffUser = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password || 'Staff@1234', salt);
 
+        // Pre-configure permissions based on role if not provided
+        let userPermissions = permissions || [];
+        if (userPermissions.length === 0) {
+            if (role === 'product_manager') userPermissions = ['manage_products', 'manage_inventory'];
+            else if (role === 'inventory_manager') userPermissions = ['manage_inventory'];
+            else if (role === 'order_manager') userPermissions = ['manage_orders'];
+            else if (role === 'marketing_manager') userPermissions = ['manage_campaigns', 'manage_coupons', 'manage_appearance'];
+            else if (role === 'customer_support') userPermissions = ['manage_customers', 'manage_reviews'];
+            else if (role === 'admin' || role === 'super_admin') userPermissions = ['manage_products', 'manage_inventory', 'manage_orders', 'manage_coupons', 'manage_campaigns', 'manage_appearance', 'manage_customers', 'manage_reviews', 'manage_staff'];
+        }
+
         const staffUser = await User.create({
             name,
             email,
             password: hashedPassword,
             role: role || 'staff',
-            isAdmin: role === 'admin',
-            permissions: permissions || [],
+            isAdmin: role === 'admin' || role === 'super_admin',
+            permissions: userPermissions,
+        });
+
+        // Audit Trail
+        await AuditLog.create({
+            user: req.user._id,
+            userName: req.user.name,
+            userRole: req.user.role,
+            action: 'STAFF_CREATED',
+            resource: 'Staff Management',
+            details: `Created new staff account "${name}" (${email}) with role: ${role || 'staff'}`,
+            ipAddress: req.ip || '127.0.0.1'
         });
 
         res.status(201).json({
@@ -289,12 +312,24 @@ const updateStaffPermissions = async (req, res) => {
 
         staffUser.name = req.body.name || staffUser.name;
         staffUser.role = req.body.role || staffUser.role;
-        staffUser.isAdmin = staffUser.role === 'admin';
+        staffUser.isAdmin = staffUser.role === 'admin' || staffUser.role === 'super_admin';
         if (req.body.permissions) {
             staffUser.permissions = req.body.permissions;
         }
 
         const updated = await staffUser.save();
+
+        // Audit Trail
+        await AuditLog.create({
+            user: req.user._id,
+            userName: req.user.name,
+            userRole: req.user.role,
+            action: 'STAFF_PERMISSIONS_UPDATED',
+            resource: 'Staff Management',
+            details: `Updated role (${updated.role}) and permissions for staff user "${updated.name}" (${updated.email})`,
+            ipAddress: req.ip || '127.0.0.1'
+        });
+
         res.json({
             _id: updated._id,
             name: updated.name,
@@ -323,8 +358,65 @@ const deleteStaffUser = async (req, res) => {
             return res.status(400).json({ message: 'Cannot delete your own admin account' });
         }
 
+        const deletedName = staffUser.name;
+        const deletedEmail = staffUser.email;
+
         await staffUser.deleteOne();
+
+        // Audit Trail
+        await AuditLog.create({
+            user: req.user._id,
+            userName: req.user.name,
+            userRole: req.user.role,
+            action: 'STAFF_DELETED',
+            resource: 'Staff Management',
+            details: `Revoked access and deleted staff account "${deletedName}" (${deletedEmail})`,
+            ipAddress: req.ip || '127.0.0.1'
+        });
+
         res.json({ message: 'Staff user removed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get system audit activity logs
+// @route   GET /api/users/audit-logs
+// @access  Private / Admin
+const getAuditLogs = async (req, res) => {
+    try {
+        const logs = await AuditLog.find({}).sort({ createdAt: -1 }).limit(100);
+        res.json(logs);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Toggle Two-Factor Authentication requirement
+// @route   POST /api/users/toggle-2fa
+// @access  Private / Admin or Staff
+const toggleTwoFactor = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        user.twoFactorEnabled = !user.twoFactorEnabled;
+        await user.save();
+
+        await AuditLog.create({
+            user: req.user._id,
+            userName: req.user.name,
+            userRole: req.user.role,
+            action: user.twoFactorEnabled ? '2FA_ENABLED' : '2FA_DISABLED',
+            resource: 'Security & Access',
+            details: `Two-Factor Authentication was ${user.twoFactorEnabled ? 'enabled' : 'disabled'} for ${user.email}`,
+            ipAddress: req.ip || '127.0.0.1'
+        });
+
+        res.json({
+            success: true,
+            twoFactorEnabled: user.twoFactorEnabled,
+            message: `Two-Factor Authentication is now ${user.twoFactorEnabled ? 'ACTIVE (Requires 2FA Code)' : 'DISABLED'}.`
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -352,5 +444,7 @@ module.exports = {
     createStaffUser,
     updateStaffPermissions,
     deleteStaffUser,
+    getAuditLogs,
+    toggleTwoFactor,
     getAllUsers,
 };
