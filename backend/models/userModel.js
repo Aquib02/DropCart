@@ -43,6 +43,37 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 50,
         },
+        isBlocked: {
+            type: Boolean,
+            default: false,
+        },
+        blockReason: {
+            type: String,
+            default: '',
+        },
+        totalSpent: {
+            type: Number,
+            default: 0,
+        },
+        ordersCount: {
+            type: Number,
+            default: 0,
+        },
+        customerSegment: {
+            type: String,
+            enum: ['New', 'Regular', 'VIP', 'At Risk'],
+            default: 'New',
+        },
+        customerDiscounts: [
+            {
+                type: String,
+                uppercase: true,
+            }
+        ],
+        lastActive: {
+            type: Date,
+            default: Date.now,
+        },
         deliveryPincode: {
             type: String,
             default: '110001',

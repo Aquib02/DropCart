@@ -18,6 +18,11 @@ const authUser = async (req, res) => {
         const user = await User.findOne({ email }).populate('wishlist', 'name price image category countInStock isOutOfStock');
 
         if (user && (await bcrypt.compare(password, user.password))) {
+            if (user.isBlocked) {
+                return res.status(403).json({
+                    message: `Your customer account has been suspended. Reason: ${user.blockReason || 'Policy review'}. Please contact support.`
+                });
+            }
             res.json({
                 _id: user._id,
                 name: user.name,

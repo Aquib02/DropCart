@@ -15,13 +15,23 @@ const couponSchema = new mongoose.Schema(
         },
         discountType: {
             type: String,
-            enum: ['percentage', 'fixed'],
+            enum: ['percentage', 'fixed', 'bogo', 'first_order', 'category_specific', 'flash_sale'],
             default: 'percentage',
         },
         discountAmount: {
             type: Number,
             required: [true, 'Discount amount is required'],
             min: 1,
+        },
+        applicableCategory: {
+            type: String,
+            default: 'All',
+        },
+        applicableUserEmail: {
+            type: String,
+            lowercase: true,
+            trim: true,
+            default: '',
         },
         minPurchase: {
             type: Number,
@@ -30,6 +40,22 @@ const couponSchema = new mongoose.Schema(
         maxDiscount: {
             type: Number,
             default: null, // e.g. Max ₹1,000 off on percentage coupons
+        },
+        perUserLimit: {
+            type: Number,
+            default: 1,
+        },
+        totalDiscountGiven: {
+            type: Number,
+            default: 0,
+        },
+        totalRevenueGenerated: {
+            type: Number,
+            default: 0,
+        },
+        isFlashSale: {
+            type: Boolean,
+            default: false,
         },
         expiryDate: {
             type: Date,

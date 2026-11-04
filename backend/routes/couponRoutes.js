@@ -5,6 +5,7 @@ const {
     getActiveCoupons,
     getAllCoupons,
     createCoupon,
+    toggleCouponStatus,
     deleteCoupon,
 } = require('../controllers/couponController');
 const { protect, admin } = require('../middleware/authMiddleware');
@@ -15,6 +16,8 @@ router.get('/active', getActiveCoupons);
 router.route('/')
     .get(protect, admin, getAllCoupons)
     .post(protect, admin, createCoupon);
+
+router.patch('/:id/toggle', protect, admin, toggleCouponStatus);
 
 router.route('/:id')
     .delete(protect, admin, deleteCoupon);
