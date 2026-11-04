@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useContext, useState } from 'react';
-import { Heart, Star, ShoppingBag, Eye, Check, Zap, Scale } from 'lucide-react';
+import { Heart, Star, ShoppingBag, Eye, Check, Zap, Scale, ZoomIn } from 'lucide-react';
+import ImageLightboxModal from './ImageLightboxModal';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { AuthContext } from '../context/AuthContext';
@@ -14,6 +15,7 @@ const ProductCard = ({ product }) => {
     const navigate = useNavigate();
 
     const [added, setAdded] = useState(false);
+    const [isEnlargeOpen, setIsEnlargeOpen] = useState(false);
     const isWishlisted = isInWishlist(product._id);
     const isCompared = isInCompare ? isInCompare(product._id) : false;
     const isOutOfStock = product.isOutOfStock || product.countInStock <= 0;
@@ -111,6 +113,20 @@ const ProductCard = ({ product }) => {
                     </button>
                 )}
 
+                {/* Quick Enlarge / Zoom Button */}
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsEnlargeOpen(true);
+                    }}
+                    aria-label="Enlarge Product Image"
+                    className="absolute right-2.5 top-[88px] flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-600 shadow-md transition-all duration-200 hover:bg-white hover:text-orange-600 opacity-0 group-hover:opacity-100"
+                    title="Click to view enlarged image"
+                >
+                    <ZoomIn className="h-3.5 w-3.5" />
+                </button>
+
                 {/* Out of Stock Overlay */}
                 {isOutOfStock && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
@@ -204,6 +220,15 @@ const ProductCard = ({ product }) => {
                     </button>
                 </div>
             </div>
+            {/* Quick View Enlarged Modal */}
+            <ImageLightboxModal
+                isOpen={isEnlargeOpen}
+                onClose={() => setIsEnlargeOpen(false)}
+                images={product.images && product.images.length > 0 ? product.images : [product.image]}
+                initialIndex={0}
+                productTitle={product.name}
+                productPrice={product.price}
+            />
         </div>
     );
 };

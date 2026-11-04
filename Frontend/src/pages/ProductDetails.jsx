@@ -16,6 +16,7 @@ import {
     Plus,
     X,
     ChevronRight,
+    ZoomIn,
 } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 import { CartContext } from '../context/CartContext';
@@ -24,6 +25,7 @@ import { AuthContext } from '../context/AuthContext';
 import { CompareContext } from '../context/CompareContext';
 import RecentlyViewedProducts, { recordRecentlyViewed } from '../components/RecentlyViewedProducts';
 import AIReviewSummary from '../components/AIReviewSummary';
+import ImageLightboxModal from '../components/ImageLightboxModal';
 
 const ProductDetails = () => {
     const { id } = useParams();
@@ -38,6 +40,8 @@ const ProductDetails = () => {
     const [product, setProduct] = useState(null);
     const [relatedData, setRelatedData] = useState({ similar: [], frequentlyBoughtTogether: [] });
     const [activeImage, setActiveImage] = useState('');
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
     const [selectedVariants, setSelectedVariants] = useState({});
     const [qty, setQty] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -307,12 +311,27 @@ const ProductDetails = () => {
                             )}
 
                             {/* Main Active Visual with hover zoom */}
-                            <div className="relative flex-1 order-1 sm:order-2 aspect-square overflow-hidden rounded-2xl border border-gray-100 bg-gray-50/60 p-4 group">
+                            <div
+                                onClick={() => {
+                                    const currentSrc = activeImage || product.image;
+                                    const idx = galleryImages.findIndex(img => img === currentSrc);
+                                    setLightboxIndex(idx >= 0 ? idx : 0);
+                                    setIsLightboxOpen(true);
+                                }}
+                                className="relative flex-1 order-1 sm:order-2 aspect-square overflow-hidden rounded-2xl border border-gray-100 bg-gray-50/60 p-4 group cursor-zoom-in"
+                                title="Click to view enlarged image"
+                            >
                                 <img
                                     src={activeImage || product.image}
                                     alt={product.name}
-                                    className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-125"
+                                    className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
                                 />
+
+                                {/* Click to Enlarge Badge */}
+                                <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/75 px-3 py-1.5 text-[11px] font-black text-white shadow-lg backdrop-blur-xs transition-all duration-300 group-hover:bg-orange-600 group-hover:scale-105">
+                                    <ZoomIn className="h-3.5 w-3.5" />
+                                    <span>Click to Enlarge</span>
+                                </div>
 
                                 {/* Tag Badge */}
                                 {product.tag && (
@@ -909,6 +928,15 @@ const ProductDetails = () => {
                     </div>
                 </div>
             )}
+            {/* High-Resolution Full-Screen Image Lightbox Modal */}
+            <ImageLightboxModal
+                isOpen={isLightboxOpen}
+                onClose={() => setIsLightboxOpen(false)}
+                images={galleryImages}
+                initialIndex={lightboxIndex}
+                productTitle={product?.name}
+                productPrice={product?.price}
+            />
         </div>
     );
 };
