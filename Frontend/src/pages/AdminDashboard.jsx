@@ -21,6 +21,21 @@ import {
     AlertCircle,
     CheckCircle2,
     Loader2,
+    ChevronLeft,
+    ChevronRight,
+    Menu,
+    Calendar,
+    ArrowUpRight,
+    ArrowDownRight,
+    DollarSign,
+    Percent,
+    Clock,
+    Activity,
+    ExternalLink,
+    Filter,
+    FileSpreadsheet,
+    Layers,
+    Sparkles,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
@@ -28,15 +43,25 @@ import AdminAnalyticsCharts from '../components/admin/AdminAnalyticsCharts';
 import AdminCouponsTab from '../components/admin/AdminCouponsTab';
 import AdminCustomersTab from '../components/admin/AdminCustomersTab';
 import AdminReviewsTab from '../components/admin/AdminReviewsTab';
-import { exportOrdersToCSV } from '../utils/exportUtils';
+import { exportOrdersToCSV, exportAnalyticsReportToCSV } from '../utils/exportUtils';
 import { useSocket } from '../context/SocketContext';
 
 const AdminDashboard = () => {
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    // Active Tab: 'overview' | 'products' | 'orders' | 'appearance' | 'staff'
+    // Active Tab: 'overview' | 'products' | 'orders' | 'appearance' | 'staff' | 'coupons' | 'customers' | 'reviews'
     const [activeTab, setActiveTab] = useState('overview');
+
+    // Sidebar & Layout State
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+    // Date Range Filter State ('all' | 'today' | '7d' | '30d' | '90d' | '1y' | 'custom')
+    const [dateRange, setDateRange] = useState('all');
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
+    const [showCustomDateModal, setShowCustomDateModal] = useState(false);
 
     // Overview Stats State
     const [stats, setStats] = useState(null);
@@ -106,17 +131,41 @@ const AdminDashboard = () => {
     }, [user, navigate]);
 
     // Data Loaders
-    const fetchStats = async () => {
+    const fetchStats = async (range = dateRange, start = customStartDate, end = customEndDate) => {
         if (!user) return;
         try {
             setLoadingStats(true);
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const { data } = await axios.get(`${API_BASE_URL}/api/orders/stats`, config);
+            let url = `${API_BASE_URL}/api/orders/stats?range=${range}`;
+            if (range === 'custom' && start && end) {
+                url += `&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`;
+            }
+            const { data } = await axios.get(url, config);
             setStats(data);
             setLoadingStats(false);
         } catch {
             setLoadingStats(false);
         }
+    };
+
+    const handleSelectRange = (range) => {
+        if (range === 'custom') {
+            setShowCustomDateModal(true);
+            return;
+        }
+        setDateRange(range);
+        fetchStats(range);
+    };
+
+    const handleApplyCustomDate = (e) => {
+        e.preventDefault();
+        if (!customStartDate || !customEndDate) {
+            alert('Please select both start and end dates.');
+            return;
+        }
+        setDateRange('custom');
+        setShowCustomDateModal(false);
+        fetchStats('custom', customStartDate, customEndDate);
     };
 
     const fetchProducts = async () => {
@@ -417,141 +466,345 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#f8f8f6] px-4 py-8 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-7xl">
-                {/* Admin Top Header Banner */}
-                <div className="mb-8 overflow-hidden rounded-3xl bg-[#171717] p-6 text-white shadow-xl sm:p-8">
-                    <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-                        <div className="flex items-center gap-4">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 shadow-lg">
-                                <Shield className="h-7 w-7 text-white" />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h1 className="text-2xl font-black sm:text-3xl">
-                                        Admin Control Center
-                                    </h1>
-                                    <span className="rounded-full bg-orange-500 px-3 py-0.5 text-xs font-black uppercase tracking-wider text-white">
-                                        {user?.role === 'admin' || user?.isAdmin ? 'Owner / Admin' : 'Staff'}
-                                    </span>
-                                </div>
-                                <p className="mt-1 text-xs text-gray-400">
-                                    Manage inventory, customer orders, store appearance, and team permissions
-                                </p>
-                            </div>
+        <div className="flex min-h-screen bg-[#f8f9fa] text-gray-900 font-sans">
+            {/* Mobile Backdrop */}
+            {mobileSidebarOpen && (
+                <div
+                    onClick={() => setMobileSidebarOpen(false)}
+                    className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden"
+                />
+            )}
+
+            {/* Collapsible Enterprise Sidebar */}
+            <aside
+                className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-gray-200/80 bg-white transition-all duration-300 ease-in-out lg:static ${
+                    isSidebarCollapsed ? 'w-20' : 'w-64'
+                } ${mobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}`}
+            >
+                {/* Sidebar Header */}
+                <div className="flex h-16 items-center justify-between border-b border-gray-100 px-4">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white shadow-md shadow-orange-500/20">
+                            <Shield className="h-5 w-5" />
                         </div>
+                        {!isSidebarCollapsed && (
+                            <div className="truncate">
+                                <h2 className="text-sm font-black tracking-tight text-gray-900">DropCart</h2>
+                                <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest block">
+                                    Enterprise OS
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                    {/* Mobile close button */}
+                    <button
+                        onClick={() => setMobileSidebarOpen(false)}
+                        className="rounded-xl p-1.5 text-gray-400 hover:bg-gray-100 lg:hidden"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
 
-                        {/* Navigation Pills */}
-                        <div className="flex flex-wrap gap-2">
+                {/* Navigation Links Grouped */}
+                <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+                    {/* Group: Core Intelligence */}
+                    <div>
+                        {!isSidebarCollapsed && (
+                            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">
+                                Intelligence
+                            </p>
+                        )}
+                        <nav className="space-y-1">
                             <button
-                                onClick={() => setActiveTab('overview')}
-                                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+                                onClick={() => { setActiveTab('overview'); setMobileSidebarOpen(false); }}
+                                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
                                     activeTab === 'overview'
-                                        ? 'bg-orange-500 text-white shadow-md'
-                                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                }`}
+                                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                        : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                title={isSidebarCollapsed ? 'Overview & KPIs' : undefined}
                             >
-                                <BarChart3 className="h-4 w-4" />
-                                Overview
+                                <BarChart3 className="h-4 w-4 shrink-0" />
+                                {!isSidebarCollapsed && <span className="truncate">Overview & KPIs</span>}
                             </button>
+                        </nav>
+                    </div>
 
+                    {/* Group: Commerce Operations */}
+                    <div>
+                        {!isSidebarCollapsed && (
+                            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">
+                                Commerce
+                            </p>
+                        )}
+                        <nav className="space-y-1">
                             {can('manage_products') && (
                                 <button
-                                    onClick={() => setActiveTab('products')}
-                                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+                                    onClick={() => { setActiveTab('products'); setMobileSidebarOpen(false); }}
+                                    className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
                                         activeTab === 'products'
-                                            ? 'bg-orange-500 text-white shadow-md'
-                                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                    }`}
+                                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                            : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                    } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                    title={isSidebarCollapsed ? 'Products & Stock' : undefined}
                                 >
-                                    <Package className="h-4 w-4" />
-                                    Products & Stocks
+                                    <div className="flex items-center gap-3">
+                                        <Package className="h-4 w-4 shrink-0" />
+                                        {!isSidebarCollapsed && <span className="truncate">Products & Stock</span>}
+                                    </div>
+                                    {!isSidebarCollapsed && stats?.lowStockCount > 0 && (
+                                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                                            activeTab === 'products' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
+                                        }`}>
+                                            {stats.lowStockCount}
+                                        </span>
+                                    )}
                                 </button>
                             )}
 
                             {can('manage_orders') && (
                                 <button
-                                    onClick={() => setActiveTab('orders')}
-                                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+                                    onClick={() => { setActiveTab('orders'); setMobileSidebarOpen(false); }}
+                                    className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
                                         activeTab === 'orders'
-                                            ? 'bg-orange-500 text-white shadow-md'
-                                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                    }`}
+                                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                            : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                    } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                    title={isSidebarCollapsed ? 'Orders' : undefined}
                                 >
-                                    <ShoppingBag className="h-4 w-4" />
-                                    Orders ({orders.length})
+                                    <div className="flex items-center gap-3">
+                                        <ShoppingBag className="h-4 w-4 shrink-0" />
+                                        {!isSidebarCollapsed && <span className="truncate">Orders</span>}
+                                    </div>
+                                    {!isSidebarCollapsed && (
+                                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                                            activeTab === 'orders' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'
+                                        }`}>
+                                            {orders.length}
+                                        </span>
+                                    )}
                                 </button>
                             )}
 
-                            {/* Coupons & Promotions Tab */}
                             <button
-                                onClick={() => setActiveTab('coupons')}
-                                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
-                                    activeTab === 'coupons'
-                                        ? 'bg-orange-500 text-white shadow-md'
-                                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                }`}
-                            >
-                                <Tag className="h-4 w-4" />
-                                Coupons & Deals
-                            </button>
-
-                            {/* Customer Directory Tab */}
-                            <button
-                                onClick={() => setActiveTab('customers')}
-                                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+                                onClick={() => { setActiveTab('customers'); setMobileSidebarOpen(false); }}
+                                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
                                     activeTab === 'customers'
-                                        ? 'bg-orange-500 text-white shadow-md'
-                                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                }`}
+                                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                        : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                title={isSidebarCollapsed ? 'Customers CRM' : undefined}
                             >
-                                <Users className="h-4 w-4" />
-                                Customers
+                                <Users className="h-4 w-4 shrink-0" />
+                                {!isSidebarCollapsed && <span className="truncate">Customers CRM</span>}
                             </button>
+                        </nav>
+                    </div>
 
-                            {/* Customer Reviews Moderation Tab */}
+                    {/* Group: Marketing & Storefront */}
+                    <div>
+                        {!isSidebarCollapsed && (
+                            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">
+                                Growth & Look
+                            </p>
+                        )}
+                        <nav className="space-y-1">
                             <button
-                                onClick={() => setActiveTab('reviews')}
-                                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
-                                    activeTab === 'reviews'
-                                        ? 'bg-orange-500 text-white shadow-md'
-                                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                }`}
+                                onClick={() => { setActiveTab('coupons'); setMobileSidebarOpen(false); }}
+                                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
+                                    activeTab === 'coupons'
+                                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                        : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                title={isSidebarCollapsed ? 'Coupons & Deals' : undefined}
                             >
-                                <MessageSquare className="h-4 w-4" />
-                                Reviews
+                                <Tag className="h-4 w-4 shrink-0" />
+                                {!isSidebarCollapsed && <span className="truncate">Coupons & Deals</span>}
                             </button>
 
                             {can('manage_appearance') && (
                                 <button
-                                    onClick={() => setActiveTab('appearance')}
-                                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+                                    onClick={() => { setActiveTab('appearance'); setMobileSidebarOpen(false); }}
+                                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
                                         activeTab === 'appearance'
-                                            ? 'bg-orange-500 text-white shadow-md'
-                                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                    }`}
-                                >
-                                    <Palette className="h-4 w-4" />
-                                    Look & Theme
-                                </button>
+                                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                            : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                title={isSidebarCollapsed ? 'Store Look & Theme' : undefined}
+                            >
+                                <Palette className="h-4 w-4 shrink-0" />
+                                {!isSidebarCollapsed && <span className="truncate">Store Look & Theme</span>}
+                            </button>
                             )}
+                        </nav>
+                    </div>
+
+                    {/* Group: Governance & Security */}
+                    <div>
+                        {!isSidebarCollapsed && (
+                            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">
+                                Governance
+                            </p>
+                        )}
+                        <nav className="space-y-1">
+                            <button
+                                onClick={() => { setActiveTab('reviews'); setMobileSidebarOpen(false); }}
+                                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
+                                    activeTab === 'reviews'
+                                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                        : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                title={isSidebarCollapsed ? 'Product Reviews' : undefined}
+                            >
+                                <MessageSquare className="h-4 w-4 shrink-0" />
+                                {!isSidebarCollapsed && <span className="truncate">Product Reviews</span>}
+                            </button>
 
                             {can('manage_staff') && (
                                 <button
-                                    onClick={() => setActiveTab('staff')}
-                                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+                                    onClick={() => { setActiveTab('staff'); setMobileSidebarOpen(false); }}
+                                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
                                         activeTab === 'staff'
-                                            ? 'bg-orange-500 text-white shadow-md'
-                                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                    }`}
+                                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                            : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                    } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                    title={isSidebarCollapsed ? 'Staff & Security' : undefined}
                                 >
-                                    <Shield className="h-4 w-4" />
-                                    Staff & Roles
+                                    <Shield className="h-4 w-4 shrink-0" />
+                                    {!isSidebarCollapsed && <span className="truncate">Staff & Security</span>}
                                 </button>
                             )}
-                        </div>
+                        </nav>
                     </div>
                 </div>
+
+                {/* Sidebar Footer User Card */}
+                <div className="border-t border-gray-100 p-3">
+                    <div className={`flex items-center gap-3 rounded-2xl bg-gray-50 p-2.5 ${isSidebarCollapsed ? 'justify-center p-2' : ''}`}>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-gray-900 to-gray-700 text-white font-black text-xs">
+                            {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                        </div>
+                        {!isSidebarCollapsed && (
+                            <div className="min-w-0 flex-1 truncate">
+                                <p className="text-xs font-black text-gray-900 truncate">{user?.name || 'Administrator'}</p>
+                                <span className="text-[10px] font-bold text-gray-500 capitalize">
+                                    {user?.role === 'admin' || user?.isAdmin ? 'Owner / Admin' : 'Staff Member'}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+                {/* Enterprise Sticky Topbar */}
+                <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200/80 bg-white/95 px-4 backdrop-blur-md sm:px-6">
+                    {/* Left: Mobile hamburger & Desktop sidebar toggle & Title */}
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setMobileSidebarOpen(true)}
+                            className="rounded-xl p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
+                        >
+                            <Menu className="h-5 w-5" />
+                        </button>
+
+                        <button
+                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                            className="hidden rounded-xl p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 lg:flex items-center justify-center transition"
+                            title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                        >
+                            {isSidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                        </button>
+
+                        <div className="hidden sm:block">
+                            <h1 className="text-sm font-black capitalize text-gray-900">
+                                {activeTab === 'overview' && 'Executive Dashboard & Analytics'}
+                                {activeTab === 'products' && 'Inventory & Product Catalog'}
+                                {activeTab === 'orders' && 'Order Fulfillment & Lifecycle'}
+                                {activeTab === 'coupons' && 'Coupon & Promotional Offers'}
+                                {activeTab === 'appearance' && 'Storefront Theme & Branding'}
+                                {activeTab === 'customers' && 'Customer Relationship Manager'}
+                                {activeTab === 'reviews' && 'Customer Reviews Moderation'}
+                                {activeTab === 'staff' && 'Access Control & Staff RBAC'}
+                            </h1>
+                            <p className="text-[11px] text-gray-400">
+                                Real-time enterprise administration & inventory sync
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Right: Date Range Selector, Export, Refresh, Storefront */}
+                    <div className="flex items-center gap-2">
+                        {/* Date Filters (Only visible on Overview) */}
+                        {activeTab === 'overview' && (
+                            <div className="hidden md:flex items-center rounded-xl bg-gray-100 p-1 text-[11px] font-bold text-gray-600">
+                                {['all', 'today', '7d', '30d', '90d', '1y'].map((rng) => (
+                                    <button
+                                        key={rng}
+                                        onClick={() => handleSelectRange(rng)}
+                                        className={`rounded-lg px-2.5 py-1 transition uppercase ${
+                                            dateRange === rng
+                                                ? 'bg-white text-orange-600 shadow-xs'
+                                                : 'hover:text-gray-900'
+                                        }`}
+                                    >
+                                        {rng === 'all' ? 'All' : rng}
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setShowCustomDateModal(true)}
+                                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1 transition ${
+                                        dateRange === 'custom'
+                                            ? 'bg-white text-orange-600 shadow-xs'
+                                            : 'hover:text-gray-900'
+                                    }`}
+                                >
+                                    <Calendar className="h-3 w-3" /> Custom
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Export Analytics Report Button */}
+                        {activeTab === 'overview' && (
+                            <button
+                                onClick={() => exportAnalyticsReportToCSV(stats)}
+                                className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 shadow-xs hover:bg-gray-50 hover:text-orange-600 transition"
+                                title="Export CSV Report"
+                            >
+                                <Download className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Export Report</span>
+                            </button>
+                        )}
+
+                        {/* Refresh Button */}
+                        <button
+                            onClick={() => {
+                                fetchStats();
+                                fetchProducts();
+                                fetchOrders();
+                            }}
+                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-xs hover:bg-gray-50 hover:text-orange-600 transition"
+                            title="Refresh Data"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${loadingStats ? 'animate-spin text-orange-500' : ''}`} />
+                        </button>
+
+                        {/* View Live Store */}
+                        <a
+                            href="/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hidden sm:flex items-center gap-1.5 rounded-xl bg-gray-900 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-gray-800 transition"
+                        >
+                            <span>Storefront</span>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                    </div>
+                </header>
+
+                {/* Main Content Body */}
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-8">
 
                 {/* TAB 1: OVERVIEW & ANALYTICS */}
                 {activeTab === 'overview' && (
@@ -565,87 +818,298 @@ const AdminDashboard = () => {
                             </div>
                         ) : (
                             <>
-                                {/* Metrics Cards Grid */}
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                                {/* 10 Enterprise KPI Cards Grid */}
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                                    {/* Card 1: Gross Revenue */}
+                                    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold uppercase text-gray-400">
-                                                Total Revenue
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                                                Gross Revenue
                                             </span>
-                                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 font-bold">
                                                 ₹
                                             </span>
                                         </div>
-                                        <p className="mt-2 text-2xl font-black text-gray-900">
-                                            ₹{stats?.totalRevenue?.toLocaleString() || 0}
+                                        <p className="mt-2 text-2xl font-black text-gray-950">
+                                            ₹{(stats?.totalRevenue || 0).toLocaleString('en-IN')}
                                         </p>
-                                        <span className="mt-1 flex items-center gap-1 text-[11px] font-bold text-emerald-600">
-                                            <TrendingUp className="h-3 w-3" /> Live Gross Sales
+                                        <div className="mt-2 flex items-center gap-1 text-[11px] font-bold">
+                                            {(stats?.revenueGrowthPercent || 0) >= 0 ? (
+                                                <span className="flex items-center text-emerald-600">
+                                                    <ArrowUpRight className="h-3.5 w-3.5" />
+                                                    +{stats?.revenueGrowthPercent || 0}%
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center text-rose-600">
+                                                    <ArrowDownRight className="h-3.5 w-3.5" />
+                                                    {stats?.revenueGrowthPercent || 0}%
+                                                </span>
+                                            )}
+                                            <span className="text-gray-400 font-normal">vs prev period</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Card 2: Total Net Profit */}
+                                    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                                                Net Profit
+                                            </span>
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50 text-teal-600 font-bold">
+                                                <TrendingUp className="h-4 w-4" />
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 text-2xl font-black text-teal-700">
+                                            ₹{(stats?.totalProfit || 0).toLocaleString('en-IN')}
+                                        </p>
+                                        <span className="mt-2 text-[11px] font-bold text-gray-500 block">
+                                            Based on COGS & margins
                                         </span>
                                     </div>
 
-                                    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                                    {/* Card 3: Total Orders */}
+                                    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold uppercase text-gray-400">
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">
                                                 Total Orders
                                             </span>
                                             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
                                                 <ShoppingBag className="h-4 w-4" />
                                             </span>
                                         </div>
-                                        <p className="mt-2 text-2xl font-black text-gray-900">
+                                        <p className="mt-2 text-2xl font-black text-gray-950">
                                             {stats?.totalOrders || 0}
                                         </p>
-                                        <span className="mt-1 text-[11px] font-bold text-amber-600">
-                                            {stats?.pendingOrders || 0} Pending Delivery
-                                        </span>
+                                        <div className="mt-2 flex items-center gap-1 text-[11px] font-bold">
+                                            {(stats?.orderGrowthPercent || 0) >= 0 ? (
+                                                <span className="flex items-center text-emerald-600">
+                                                    <ArrowUpRight className="h-3.5 w-3.5" />
+                                                    +{stats?.orderGrowthPercent || 0}%
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center text-rose-600">
+                                                    <ArrowDownRight className="h-3.5 w-3.5" />
+                                                    {stats?.orderGrowthPercent || 0}%
+                                                </span>
+                                            )}
+                                            <span className="text-gray-400 font-normal">volume growth</span>
+                                        </div>
                                     </div>
 
-                                    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                                    {/* Card 4: Average Order Value */}
+                                    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold uppercase text-gray-400">
-                                                Catalog Stock
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                                                Avg Order Value
                                             </span>
                                             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                                                <Package className="h-4 w-4" />
+                                                <Percent className="h-4 w-4" />
                                             </span>
                                         </div>
-                                        <p className="mt-2 text-2xl font-black text-gray-900">
-                                            {stats?.totalProducts || 0}
+                                        <p className="mt-2 text-2xl font-black text-gray-950">
+                                            ₹{(stats?.averageOrderValue || 0).toLocaleString('en-IN')}
                                         </p>
-                                        <span className="mt-1 text-[11px] font-bold text-rose-600">
-                                            {stats?.outOfStockProducts || 0} Out of Stock
+                                        <span className="mt-2 text-[11px] font-bold text-gray-500 block">
+                                            Revenue per checkout
                                         </span>
                                     </div>
 
-                                    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                                    {/* Card 5: Conversion Rate */}
+                                    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold uppercase text-gray-400">
-                                                Customers & Staff
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                                                Conversion Rate
                                             </span>
                                             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                                                <Activity className="h-4 w-4" />
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 text-2xl font-black text-purple-700">
+                                            {stats?.conversionRate || 0}%
+                                        </p>
+                                        <span className="mt-2 text-[11px] font-bold text-emerald-600 block">
+                                            Customer conversion
+                                        </span>
+                                    </div>
+
+                                    {/* Card 6: Total Customers */}
+                                    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                                                Shoppers
+                                            </span>
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                                                 <Users className="h-4 w-4" />
                                             </span>
                                         </div>
-                                        <p className="mt-2 text-2xl font-black text-gray-900">
+                                        <p className="mt-2 text-2xl font-black text-gray-950">
                                             {stats?.totalUsers || 0}
                                         </p>
-                                        <span className="mt-1 text-[11px] font-bold text-gray-500">
-                                            {stats?.totalStaff || 0} Admin / Staff Members
+                                        <span className="mt-2 text-[11px] font-bold text-gray-400 block">
+                                            {stats?.totalStaff || 0} staff / admins
+                                        </span>
+                                    </div>
+
+                                    {/* Card 7: Pending Orders */}
+                                    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                                                Pending Orders
+                                            </span>
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 font-bold text-xs">
+                                                <Clock className="h-4 w-4" />
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 text-2xl font-black text-amber-600">
+                                            {stats?.pendingOrders || 0}
+                                        </p>
+                                        <span className="mt-2 text-[11px] font-bold text-amber-700 block">
+                                            Awaiting dispatch
+                                        </span>
+                                    </div>
+
+                                    {/* Card 8: Delivered Orders */}
+                                    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                                                Delivered
+                                            </span>
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                                                <CheckCircle2 className="h-4 w-4" />
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 text-2xl font-black text-emerald-600">
+                                            {stats?.deliveredOrders || 0}
+                                        </p>
+                                        <span className="mt-2 text-[11px] font-bold text-emerald-700 block">
+                                            Fulfilled checkouts
+                                        </span>
+                                    </div>
+
+                                    {/* Card 9: Cancelled / Returned */}
+                                    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                                                Cancelled / Ret
+                                            </span>
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                                                <AlertCircle className="h-4 w-4" />
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 text-2xl font-black text-rose-600">
+                                            {stats?.cancelledOrders || 0}
+                                        </p>
+                                        <span className="mt-2 text-[11px] font-bold text-rose-700 block">
+                                            Returned orders
+                                        </span>
+                                    </div>
+
+                                    {/* Card 10: Low Stock Alerts */}
+                                    <div
+                                        onClick={() => setActiveTab('products')}
+                                        className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm hover:shadow-md transition cursor-pointer group"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-gray-400 group-hover:text-orange-600">
+                                                Low Stock Alerts
+                                            </span>
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                                                <AlertTriangle className="h-4 w-4" />
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 text-2xl font-black text-rose-600">
+                                            {stats?.lowStockCount || 0}
+                                        </p>
+                                        <span className="mt-2 text-[11px] font-bold text-orange-600 block group-hover:underline">
+                                            {stats?.outOfStockProducts || 0} depleted items →
                                         </span>
                                     </div>
                                 </div>
 
-                                {/* Low Stock Alerts and Recent Orders */}
-                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                                    {/* Low Stock Warning Card */}
-                                    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                                        <div className="mb-4 flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                                                <h3 className="text-base font-black text-gray-900">
-                                                    Stock Alerts & Depleted Items
-                                                </h3>
+                                {/* Multi-Interval Revenue & Performance Comparison Charts */}
+                                <AdminAnalyticsCharts stats={stats} />
+
+                                {/* Operations Grid: Live Activity Stream & Critical Stock Depletion */}
+                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                                    {/* Left: Real-Time Live Activity Feed (6 cols) */}
+                                    <div className="lg:col-span-6 rounded-3xl border border-gray-200/80 bg-white p-6 shadow-sm">
+                                        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                                                    <Activity className="h-4 w-4" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-black text-gray-900">
+                                                        Recent Business Activities
+                                                    </h3>
+                                                    <p className="text-[11px] text-gray-500">
+                                                        Live database event timeline
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700">
+                                                Real-Time
+                                            </span>
+                                        </div>
+
+                                        <div className="mt-4 divide-y divide-gray-100">
+                                            {stats?.recentActivities && stats.recentActivities.length > 0 ? (
+                                                stats.recentActivities.map((act) => (
+                                                    <div key={act.id} className="flex items-start gap-3 py-3">
+                                                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700">
+                                                            {act.type === 'order' && <ShoppingBag className="h-3.5 w-3.5 text-orange-600" />}
+                                                            {act.type === 'user' && <Users className="h-3.5 w-3.5 text-blue-600" />}
+                                                            {act.type === 'stock' && <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-center justify-between">
+                                                                <p className="text-xs font-bold text-gray-900 truncate">
+                                                                    {act.title}
+                                                                </p>
+                                                                <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
+                                                                    {act.timestamp ? new Date(act.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Now'}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
+                                                                {act.desc}
+                                                            </p>
+                                                        </div>
+                                                        {act.status && (
+                                                            <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${
+                                                                act.status === 'Delivered'
+                                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                                    : act.status === 'Cancelled'
+                                                                    ? 'bg-rose-100 text-rose-700'
+                                                                    : 'bg-amber-100 text-amber-700'
+                                                            }`}>
+                                                                {act.status}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="py-8 text-center text-xs text-gray-400">
+                                                    No recent activities logged yet.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Right: Critical Stock Depletion Table (6 cols) */}
+                                    <div className="lg:col-span-6 rounded-3xl border border-gray-200/80 bg-white p-6 shadow-sm">
+                                        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                                                    <AlertTriangle className="h-4 w-4" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-black text-gray-900">
+                                                        Low Stock & Depleted Inventory
+                                                    </h3>
+                                                    <p className="text-[11px] text-gray-500">
+                                                        Items requiring immediate replenishment
+                                                    </p>
+                                                </div>
                                             </div>
                                             <button
                                                 onClick={() => setActiveTab('products')}
@@ -668,21 +1132,21 @@ const AdminDashboard = () => {
                                                             <img
                                                                 src={p.image}
                                                                 alt={p.name}
-                                                                className="h-10 w-10 rounded-lg object-cover"
+                                                                className="h-10 w-10 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100"
                                                             />
                                                             <div>
-                                                                <p className="text-xs font-bold text-gray-900">
+                                                                <p className="text-xs font-bold text-gray-900 line-clamp-1 max-w-[180px]">
                                                                     {p.name}
                                                                 </p>
                                                                 <p className="text-[10px] text-gray-400">
-                                                                    ₹{p.price}
+                                                                    ₹{p.price} • {p.category}
                                                                 </p>
                                                             </div>
                                                         </div>
 
                                                         <div className="flex items-center gap-2">
                                                             <span
-                                                                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                                                className={`rounded-full px-2.5 py-0.5 text-[10px] font-black ${
                                                                     p.isOutOfStock || p.countInStock === 0
                                                                         ? 'bg-rose-100 text-rose-700'
                                                                         : 'bg-amber-100 text-amber-700'
@@ -693,55 +1157,79 @@ const AdminDashboard = () => {
                                                                     : `${p.countInStock} Left`}
                                                             </span>
                                                             <button
-                                                                onClick={() => handleToggleStock(p)}
-                                                                className="rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                                                                onClick={() => handleAdjustStock(p, 15)}
+                                                                className="rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition"
                                                             >
-                                                                Restock +15
+                                                                +15
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleToggleStock(p)}
+                                                                className="rounded-lg bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-700 hover:bg-rose-50 hover:text-rose-600 transition"
+                                                            >
+                                                                Toggle
                                                             </button>
                                                         </div>
                                                     </div>
                                                 ))}
                                             {products.filter((p) => p.isOutOfStock || p.countInStock <= 5)
                                                 .length === 0 && (
-                                                <p className="py-6 text-center text-xs text-gray-400">
-                                                    🎉 All products are adequately stocked!
+                                                <p className="py-8 text-center text-xs text-gray-400">
+                                                    🎉 All inventory items are adequately stocked!
                                                 </p>
                                             )}
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Recent Customer Orders */}
-                                    <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                                        <div className="mb-4 flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <ShoppingBag className="h-5 w-5 text-orange-500" />
-                                                <h3 className="text-base font-black text-gray-900">
+
+                                {/* Recent Customer Orders Quick View */}
+                                <div className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-sm">
+                                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                                                <ShoppingBag className="h-4 w-4" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-gray-900">
                                                     Recent Customer Orders
                                                 </h3>
+                                                <p className="text-[11px] text-gray-500">
+                                                    Latest checkouts awaiting or in fulfillment
+                                                </p>
                                             </div>
-                                            <button
-                                                onClick={() => setActiveTab('orders')}
-                                                className="text-xs font-bold text-orange-600 hover:underline"
-                                            >
-                                                View All →
-                                            </button>
                                         </div>
+                                        <button
+                                            onClick={() => setActiveTab('orders')}
+                                            className="text-xs font-bold text-orange-600 hover:underline"
+                                        >
+                                            Manage All ({orders.length}) →
+                                        </button>
+                                    </div>
 
-                                        <div className="divide-y divide-gray-100">
-                                            {orders.slice(0, 5).map((o) => (
-                                                <div
-                                                    key={o._id}
-                                                    className="flex items-center justify-between py-3"
-                                                >
+                                    <div className="mt-4 divide-y divide-gray-100">
+                                        {orders.slice(0, 6).map((o) => (
+                                            <div
+                                                key={o._id}
+                                                className="flex items-center justify-between py-3 hover:bg-gray-50/50 px-2 rounded-xl transition"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 font-mono text-[11px] font-black text-gray-700">
+                                                        #{o._id.substring(o._id.length - 4).toUpperCase()}
+                                                    </div>
                                                     <div>
                                                         <p className="text-xs font-bold text-gray-900">
                                                             {o.user?.name || 'Customer'}
                                                         </p>
                                                         <p className="font-mono text-[10px] text-gray-400">
-                                                            #{o._id.substring(o._id.length - 8)} •{' '}
-                                                            {new Date(o.createdAt).toLocaleDateString()}
+                                                            {new Date(o.createdAt).toLocaleDateString('en-IN', {
+                                                                day: 'numeric',
+                                                                month: 'short',
+                                                                year: 'numeric',
+                                                            })}{' '}
+                                                            • {o.paymentMethod || 'COD'}
                                                         </p>
                                                     </div>
+                                                </div>
 
                                                     <div className="text-right">
                                                         <p className="text-xs font-black text-gray-900">
@@ -760,16 +1248,12 @@ const AdminDashboard = () => {
                                                 </div>
                                             ))}
                                             {orders.length === 0 && (
-                                                <p className="py-6 text-center text-xs text-gray-400">
-                                                    No orders yet.
+                                                <p className="py-8 text-center text-xs text-gray-400">
+                                                    No orders recorded in database yet.
                                                 </p>
                                             )}
                                         </div>
                                     </div>
-                                </div>
-
-                                {/* Interactive Sales Analytics & Revenue Trends Charts */}
-                                <AdminAnalyticsCharts stats={stats} />
                             </>
                         )}
                     </div>
@@ -1709,6 +2193,75 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 )}
+                {/* Custom Date Range Picker Modal */}
+                {showCustomDateModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+                        <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+                            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                                        <Calendar className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-black text-gray-900">Custom Date Range</h3>
+                                        <p className="text-xs text-gray-500">Filter orders & analytics by exact dates</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowCustomDateModal(false)}
+                                    className="rounded-xl p-1.5 text-gray-400 hover:bg-gray-100"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleApplyCustomDate} className="mt-5 space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                                        Start Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={customStartDate}
+                                        onChange={(e) => setCustomStartDate(e.target.value)}
+                                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold focus:border-orange-500 focus:outline-hidden"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                                        End Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={customEndDate}
+                                        onChange={(e) => setCustomEndDate(e.target.value)}
+                                        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-semibold focus:border-orange-500 focus:outline-hidden"
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-end gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCustomDateModal(false)}
+                                        className="rounded-xl px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="rounded-xl bg-orange-500 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600"
+                                    >
+                                        Apply Range
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+                </main>
             </div>
         </div>
     );

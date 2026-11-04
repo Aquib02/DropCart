@@ -88,6 +88,12 @@ const productSchema = new mongoose.Schema(
             default: 0,
             min: 0,
         },
+        // Wholesale / Cost Price (for profit margin & business analytics)
+        costPrice: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
         // Original MRP (for strikethrough & % discount)
         originalPrice: {
             type: Number,
