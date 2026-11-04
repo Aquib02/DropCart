@@ -46,6 +46,8 @@ const variantSchema = new mongoose.Schema(
         name: { type: String, required: true }, // e.g. "Color" or "Storage" or "Size"
         options: [{ type: String, required: true }], // e.g. ["128 GB", "256 GB"]
         priceDelta: { type: Number, default: 0 }, // price modifier
+        sku: { type: String, default: '' },
+        stock: { type: Number, default: 0 },
     },
     { _id: false }
 );
@@ -56,6 +58,36 @@ const productSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
+        },
+        sku: {
+            type: String,
+            trim: true,
+            default: '',
+            index: true,
+        },
+        barcode: {
+            type: String,
+            trim: true,
+            default: '',
+        },
+        status: {
+            type: String,
+            enum: ['active', 'draft', 'archived'],
+            default: 'active',
+            index: true,
+        },
+        approvalStatus: {
+            type: String,
+            enum: ['approved', 'pending_approval', 'rejected'],
+            default: 'approved',
+            index: true,
+        },
+        approvalNotes: {
+            type: String,
+            default: '',
+        },
+        scheduledPublishDate: {
+            type: Date,
         },
         brand: {
             type: String,
@@ -124,6 +156,32 @@ const productSchema = new mongoose.Schema(
         isFeatured: {
             type: Boolean,
             default: false,
+        },
+        isBestSeller: {
+            type: Boolean,
+            default: false,
+        },
+        lowStockThreshold: {
+            type: Number,
+            default: 5,
+        },
+        reservedStock: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        supplier: {
+            name: { type: String, default: '' },
+            contact: { type: String, default: '' },
+            leadTimeDays: { type: Number, default: 3 },
+        },
+        totalSalesCount: {
+            type: Number,
+            default: 0,
+        },
+        totalRevenueGenerated: {
+            type: Number,
+            default: 0,
         },
         tag: {
             type: String,

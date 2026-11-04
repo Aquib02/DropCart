@@ -514,6 +514,241 @@ const deleteProductReview = async (req, res) => {
     }
 };
 
+// 14. Bulk Product Upload (CSV / Excel rows / JSON)
+const bulkUploadProducts = async (req, res) => {
+    try {
+        const { products } = req.body;
+        if (!Array.isArray(products) || products.length === 0) {
+            return res.status(400).json({ message: 'Products array is required' });
+        }
+
+        const validProducts = products.map((p, idx) => {
+            const price = Number(p.price) || 0;
+            const originalPrice = p.originalPrice ? Number(p.originalPrice) : price;
+            const countInStock = Number(p.countInStock) || 0;
+            const sku = p.sku && p.sku.trim() !== ''
+                ? p.sku.trim()
+                : `SKU-${(p.category || 'GEN').substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}${idx}`;
+
+            return {
+                name: p.name || 'Untitled Product',
+                sku,
+                barcode: p.barcode || '',
+                brand: p.brand || 'DropCart',
+                category: p.category || 'General',
+                price,
+                costPrice: Number(p.costPrice) || Math.round(price * 0.7),
+                originalPrice,
+                discountPercent: p.discountPercent !== undefined ? Number(p.discountPercent) : (originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0),
+                countInStock,
+                isOutOfStock: countInStock === 0,
+                description: p.description || 'Quality authentic product from DropCart verified catalog.',
+                image: p.image || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&q=80',
+                images: Array.isArray(p.images) && p.images.length > 0 ? p.images : [p.image || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&q=80'],
+                status: p.status || 'active',
+                approvalStatus: 'approved',
+                isFeatured: Boolean(p.isFeatured),
+                isBestSeller: Boolean(p.isBestSeller),
+                tag: p.tag || '',
+            };
+        });
+
+        const created = await Product.insertMany(validProducts);
+        res.status(201).json({
+            success: true,
+            message: `Successfully imported ${created.length} products into catalog.`,
+            count: created.length,
+            products: created
+        });
+    } catch (error) {
+        console.error('Error in bulkUploadProducts:', error);
+        res.status(500).json({ message: 'Bulk upload failed', error: error.message });
+    }
+};
+
+// 15. Bulk Price Updates
+const bulkPriceUpdate = async (req, res) => {
+    try {
+        const { productIds, category, changeType, value } = req.body;
+        const val = Number(value);
+        if (isNaN(val)) {
+            return res.status(400).json({ message: 'Valid adjustment value is required' });
+        }
+
+        let query = {};
+        if (Array.isArray(productIds) && productIds.length > 0) {
+            query._id = { $in: productIds };
+        } else if (category && category !== 'All') {
+            query.category = category;
+        } else {
+            return res.status(400).json({ message: 'Select product IDs or a category to apply bulk price update' });
+        }
+
+        const products = await Product.find(query);
+        let updatedCount = 0;
+
+        for (const p of products) {
+            let newPrice = p.price;
+            if (changeType === 'percentage_increase') {
+                newPrice = Math.round(p.price * (1 + val / 100));
+            } else if (changeType === 'percentage_decrease') {
+                newPrice = Math.max(1, Math.round(p.price * (1 - val / 100)));
+            } else if (changeType === 'fixed_increase') {
+                newPrice = p.price + val;
+            } else if (changeType === 'fixed_decrease') {
+                newPrice = Math.max(1, p.price - val);
+            } else if (changeType === 'set_fixed') {
+                newPrice = Math.max(1, val);
+            }
+
+            p.price = newPrice;
+            if (p.originalPrice > newPrice) {
+                p.discountPercent = Math.round(((p.originalPrice - newPrice) / p.originalPrice) * 100);
+            }
+            await p.save();
+            updatedCount++;
+        }
+
+        res.json({
+            success: true,
+            message: `Successfully updated prices for ${updatedCount} product(s).`,
+            count: updatedCount
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Bulk price update failed', error: error.message });
+    }
+};
+
+// 16. Bulk Discount Management
+const bulkDiscountUpdate = async (req, res) => {
+    try {
+        const { productIds, category, discountPercent } = req.body;
+        const discount = Math.min(99, Math.max(0, Number(discountPercent)));
+
+        let query = {};
+        if (Array.isArray(productIds) && productIds.length > 0) {
+            query._id = { $in: productIds };
+        } else if (category && category !== 'All') {
+            query.category = category;
+        } else {
+            return res.status(400).json({ message: 'Select product IDs or a category' });
+        }
+
+        const products = await Product.find(query);
+        let updatedCount = 0;
+
+        for (const p of products) {
+            const basePrice = p.originalPrice && p.originalPrice > 0 ? p.originalPrice : p.price;
+            p.originalPrice = basePrice;
+            p.discountPercent = discount;
+            p.price = Math.round(basePrice * (1 - discount / 100));
+            await p.save();
+            updatedCount++;
+        }
+
+        res.json({
+            success: true,
+            message: `Successfully updated ${discount}% discount across ${updatedCount} products.`,
+            count: updatedCount
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Bulk discount update failed', error: error.message });
+    }
+};
+
+// 17. Duplicate Product
+const duplicateProduct = async (req, res) => {
+    try {
+        const original = await Product.findById(req.params.id);
+        if (!original) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        const cloneObj = original.toObject();
+        delete cloneObj._id;
+        delete cloneObj.createdAt;
+        delete cloneObj.updatedAt;
+
+        cloneObj.name = `${original.name} (Copy)`;
+        cloneObj.sku = original.sku ? `${original.sku}-COPY` : `SKU-COPY-${Date.now().toString().slice(-4)}`;
+        cloneObj.status = 'draft';
+
+        const duplicate = await Product.create(cloneObj);
+        res.status(201).json({
+            success: true,
+            message: `Product "${original.name}" duplicated as draft.`,
+            product: duplicate
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Product duplication failed', error: error.message });
+    }
+};
+
+// 18. Product Approval Workflow
+const updateApprovalStatus = async (req, res) => {
+    try {
+        const { status, notes } = req.body;
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        product.approvalStatus = status || product.approvalStatus;
+        if (notes !== undefined) product.approvalNotes = notes;
+        if (status === 'approved' && product.status === 'draft') {
+            product.status = 'active';
+        }
+        await product.save();
+
+        res.json({
+            success: true,
+            message: `Product approval status updated to ${status}.`,
+            product
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Approval status update failed', error: error.message });
+    }
+};
+
+// 19. Toggle Featured & Best Seller
+const toggleFeatured = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+        product.isFeatured = !product.isFeatured;
+        await product.save();
+        res.json({ success: true, isFeatured: product.isFeatured, product });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const toggleBestSeller = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+        product.isBestSeller = !product.isBestSeller;
+        await product.save();
+        res.json({ success: true, isBestSeller: product.isBestSeller, product });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// 20. Update Product Visibility
+const updateVisibility = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const product = await Product.findById(req.params.id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+        product.status = status;
+        await product.save();
+        res.json({ success: true, status: product.status, product });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getProduct,
     getSuggestions,
@@ -528,4 +763,12 @@ module.exports = {
     createProductReview,
     getAllReviews,
     deleteProductReview,
+    bulkUploadProducts,
+    bulkPriceUpdate,
+    bulkDiscountUpdate,
+    duplicateProduct,
+    updateApprovalStatus,
+    toggleFeatured,
+    toggleBestSeller,
+    updateVisibility,
 };

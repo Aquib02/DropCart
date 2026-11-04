@@ -37,6 +37,7 @@ import {
     Layers,
     Sparkles,
     LayoutTemplate,
+    Boxes,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
@@ -46,6 +47,8 @@ import AdminCustomersTab from '../components/admin/AdminCustomersTab';
 import AdminReviewsTab from '../components/admin/AdminReviewsTab';
 import AdminCampaignsTab from '../components/admin/AdminCampaignsTab';
 import AdminVisualEditorTab from '../components/admin/AdminVisualEditorTab';
+import AdminProductsTab from '../components/admin/AdminProductsTab';
+import AdminInventoryTab from '../components/admin/AdminInventoryTab';
 import { exportOrdersToCSV, exportAnalyticsReportToCSV } from '../utils/exportUtils';
 import { useSocket } from '../context/SocketContext';
 
@@ -553,7 +556,7 @@ const AdminDashboard = () => {
                                 >
                                     <div className="flex items-center gap-3">
                                         <Package className="h-4 w-4 shrink-0" />
-                                        {!isSidebarCollapsed && <span className="truncate">Products & Stock</span>}
+                                        {!isSidebarCollapsed && <span className="truncate">Products Catalog</span>}
                                     </div>
                                     {!isSidebarCollapsed && stats?.lowStockCount > 0 && (
                                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
@@ -562,6 +565,23 @@ const AdminDashboard = () => {
                                             {stats.lowStockCount}
                                         </span>
                                     )}
+                                </button>
+                            )}
+
+                            {can('manage_products') && (
+                                <button
+                                    onClick={() => { setActiveTab('inventory'); setMobileSidebarOpen(false); }}
+                                    className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
+                                        activeTab === 'inventory'
+                                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                                            : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                    } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                    title={isSidebarCollapsed ? 'Inventory & Stock' : undefined}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Boxes className="h-4 w-4 shrink-0" />
+                                        {!isSidebarCollapsed && <span className="truncate">Inventory Control</span>}
+                                    </div>
                                 </button>
                             )}
 
@@ -753,7 +773,8 @@ const AdminDashboard = () => {
                         <div className="hidden sm:block">
                             <h1 className="text-sm font-black capitalize text-gray-900">
                                 {activeTab === 'overview' && 'Executive Dashboard & Analytics'}
-                                {activeTab === 'products' && 'Inventory & Product Catalog'}
+                                {activeTab === 'products' && 'Product Management & Catalog Engine'}
+                                {activeTab === 'inventory' && 'Inventory Control & Stock Valuation'}
                                 {activeTab === 'orders' && 'Order Fulfillment & Lifecycle'}
                                 {activeTab === 'coupons' && 'Coupon & Promotional Offers'}
                                 {activeTab === 'campaigns' && 'Campaigns & Promotional Advertisements'}
@@ -1294,188 +1315,11 @@ const AdminDashboard = () => {
                     </div>
                 )}
 
-                {/* TAB 2: INVENTORY & PRODUCTS MANAGER */}
-                {activeTab === 'products' && (
-                    <div className="space-y-6">
-                        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                            <div>
-                                <h2 className="text-xl font-black text-gray-900">
-                                    Inventory & Product Manager
-                                </h2>
-                                <p className="text-xs text-gray-500">
-                                    Add, edit, adjust stocks, and mark products out of stock in real time
-                                </p>
-                            </div>
+                {/* TAB 2: ADVANCED PRODUCT MANAGEMENT */}
+                {activeTab === 'products' && <AdminProductsTab userToken={user.token} />}
 
-                            <button
-                                onClick={() => {
-                                    setEditingProduct(null);
-                                    setFormData({
-                                        name: '',
-                                        price: '',
-                                        image: '',
-                                        category: '',
-                                        countInStock: 20,
-                                        description: '',
-                                        isOutOfStock: false,
-                                    });
-                                    setShowAddProductModal(true);
-                                }}
-                                className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600"
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add New Product
-                            </button>
-                        </div>
-
-                        {/* Search and Filter */}
-                        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                            <input
-                                type="text"
-                                placeholder="Search products by title or category..."
-                                value={productSearch}
-                                onChange={(e) => setProductSearch(e.target.value)}
-                                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs outline-none focus:border-orange-500 focus:bg-white"
-                            />
-                        </div>
-
-                        {/* Products Table */}
-                        <div className="overflow-x-auto rounded-3xl border border-gray-200 bg-white shadow-sm">
-                            <table className="w-full text-left text-xs">
-                                <thead className="border-b border-gray-100 bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                    <tr>
-                                        <th className="p-4 sm:px-6">Product</th>
-                                        <th className="p-4">Category</th>
-                                        <th className="p-4">Price</th>
-                                        <th className="p-4">Stock Level</th>
-                                        <th className="p-4">Status & 1-Click Toggle</th>
-                                        <th className="p-4 text-right sm:px-6">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {filteredProducts.map((p) => {
-                                        const isOutOfStock = p.isOutOfStock || p.countInStock <= 0;
-
-                                        return (
-                                            <tr key={p._id} className="transition hover:bg-gray-50/50">
-                                                <td className="p-4 sm:px-6">
-                                                    <div className="flex items-center gap-3">
-                                                        <img
-                                                            src={p.image}
-                                                            alt={p.name}
-                                                            className="h-12 w-12 rounded-xl object-cover shadow-sm"
-                                                        />
-                                                        <div className="max-w-[200px]">
-                                                            <p className="line-clamp-1 font-bold text-gray-900">
-                                                                {p.name}
-                                                            </p>
-                                                            <p className="text-[10px] text-gray-400">
-                                                                ID: {p._id.substring(p._id.length - 6)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                <td className="p-4 font-semibold text-gray-700">
-                                                    {p.category}
-                                                </td>
-
-                                                <td className="p-4 font-black text-gray-900">
-                                                    ₹{p.price}
-                                                </td>
-
-                                                <td className="p-4">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <button
-                                                            onClick={() => handleAdjustStock(p, -1)}
-                                                            className="flex h-6 w-6 items-center justify-center rounded-lg border border-gray-200 font-bold hover:bg-gray-100"
-                                                            title="Decrease stock by 1"
-                                                        >
-                                                            -
-                                                        </button>
-                                                        <span className="w-8 text-center font-bold text-gray-800">
-                                                            {p.countInStock}
-                                                        </span>
-                                                        <button
-                                                            onClick={() => handleAdjustStock(p, 1)}
-                                                            className="flex h-6 w-6 items-center justify-center rounded-lg border border-gray-200 font-bold hover:bg-gray-100"
-                                                            title="Increase stock by 1"
-                                                        >
-                                                            +
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleAdjustStock(p, 10)}
-                                                            className="rounded-lg bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-black text-emerald-700 hover:bg-emerald-100 transition"
-                                                            title="Quick restock +10 units"
-                                                        >
-                                                            +10
-                                                        </button>
-                                                        {p.countInStock <= 5 && !isOutOfStock && (
-                                                            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-black text-amber-800">
-                                                                Low
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-
-                                                <td className="p-4">
-                                                    <button
-                                                        onClick={() => handleToggleStock(p)}
-                                                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wider transition ${
-                                                            isOutOfStock
-                                                                ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
-                                                                : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                                                        }`}
-                                                        title="Click to toggle stock status"
-                                                    >
-                                                        <span
-                                                            className={`h-2 w-2 rounded-full ${
-                                                                isOutOfStock ? 'bg-rose-500' : 'bg-emerald-500'
-                                                            }`}
-                                                        />
-                                                        {isOutOfStock ? 'Out of Stock' : 'In Stock'}
-                                                    </button>
-                                                </td>
-
-                                                <td className="p-4 text-right sm:px-6">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingProduct(p);
-                                                                setFormData({
-                                                                    name: p.name,
-                                                                    price: p.price,
-                                                                    image: p.image,
-                                                                    category: p.category,
-                                                                    countInStock: p.countInStock,
-                                                                    description: p.description,
-                                                                    isOutOfStock: p.isOutOfStock,
-                                                                });
-                                                                setShowAddProductModal(true);
-                                                            }}
-                                                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-orange-600"
-                                                            title="Edit Product"
-                                                        >
-                                                            <Edit2 className="h-3.5 w-3.5" />
-                                                        </button>
-
-                                                        <button
-                                                            onClick={() => handleDeleteProduct(p._id)}
-                                                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-rose-50 hover:text-rose-600"
-                                                            title="Delete Product"
-                                                        >
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
+                {/* TAB: INVENTORY CONTROL & AUDIT TRAIL */}
+                {activeTab === 'inventory' && <AdminInventoryTab userToken={user.token} />}
 
                 {/* TAB 3: CUSTOMER ORDERS HUB */}
                 {activeTab === 'orders' && (
