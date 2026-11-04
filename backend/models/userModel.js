@@ -75,5 +75,8 @@ const userSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// High performance user lookup indexes
+userSchema.index({ role: 1 });
+
 const User = mongoose.model('User', userSchema);
 module.exports = User;

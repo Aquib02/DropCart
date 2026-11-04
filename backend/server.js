@@ -19,6 +19,7 @@ const couponRoutes = require('./routes/couponRoutes.js');
 const priceAlertRoutes = require('./routes/priceAlertRoutes.js');
 const aiRoutes = require('./routes/aiRoutes.js');
 const paymentRoutes = require('./routes/paymentRoutes.js');
+const swaggerDoc = require('./docs/swaggerDoc.js');
 
 connectDB();
 
@@ -73,6 +74,7 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/alerts', priceAlertRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/docs', swaggerDoc);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -80,6 +82,7 @@ app.get('/', (req, res) => {
         status: 'active',
         message: 'DropCart Enterprise AI E-Commerce API is running...',
         version: '2.0.0',
+        docs: '/api/docs',
         realtime: 'Socket.IO active'
     });
 });
