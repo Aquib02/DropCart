@@ -49,6 +49,7 @@ import AdminCampaignsTab from '../components/admin/AdminCampaignsTab';
 import AdminVisualEditorTab from '../components/admin/AdminVisualEditorTab';
 import AdminProductsTab from '../components/admin/AdminProductsTab';
 import AdminInventoryTab from '../components/admin/AdminInventoryTab';
+import AdminOrdersTab from '../components/admin/AdminOrdersTab';
 import { exportOrdersToCSV, exportAnalyticsReportToCSV } from '../utils/exportUtils';
 import { useSocket } from '../context/SocketContext';
 
@@ -1321,143 +1322,8 @@ const AdminDashboard = () => {
                 {/* TAB: INVENTORY CONTROL & AUDIT TRAIL */}
                 {activeTab === 'inventory' && <AdminInventoryTab userToken={user.token} />}
 
-                {/* TAB 3: CUSTOMER ORDERS HUB */}
-                {activeTab === 'orders' && (
-                    <div className="space-y-6">
-                        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                            <div>
-                                <h2 className="text-xl font-black text-gray-900">
-                                    Customer Orders & Dispatch Hub
-                                </h2>
-                                <p className="text-xs text-gray-500">
-                                    Track shipments, update statuses (Pending ➔ Processing ➔ Shipped ➔ Delivered), and review addresses
-                                </p>
-                            </div>
-
-                            {/* Status Filter Chips and CSV Export */}
-                            <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex flex-wrap gap-1.5">
-                                    {['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map((status) => (
-                                        <button
-                                            key={status}
-                                            onClick={() => setOrderStatusFilter(status)}
-                                            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-                                                orderStatusFilter === status
-                                                    ? 'bg-orange-500 text-white'
-                                                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-100'
-                                            }`}
-                                        >
-                                            {status}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <button
-                                    onClick={() => exportOrdersToCSV(orders)}
-                                    className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-bold text-gray-800 hover:border-emerald-500 hover:text-emerald-700 transition shadow-2xs"
-                                    title="Download orders report in CSV format"
-                                >
-                                    <Download className="h-3.5 w-3.5 text-emerald-600" />
-                                    <span>Export CSV</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Orders List */}
-                        <div className="space-y-4">
-                            {filteredOrders.map((order) => (
-                                <div
-                                    key={order._id}
-                                    className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6"
-                                >
-                                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
-                                        <div>
-                                            <p className="font-mono text-xs font-bold text-gray-900">
-                                                Order #{order._id}
-                                            </p>
-                                            <p className="text-[11px] text-gray-500">
-                                                Customer: <span className="font-bold text-gray-800">{order.user?.name || 'Customer'}</span> ({order.user?.email || 'N/A'})
-                                            </p>
-                                            <p className="text-[10px] text-gray-400">
-                                                Date: {new Date(order.createdAt).toLocaleString()}
-                                            </p>
-                                        </div>
-
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <div className="text-right">
-                                                <span className="text-[10px] font-bold uppercase text-gray-400">
-                                                    Total Bill
-                                                </span>
-                                                <p className="text-base font-black text-gray-900">
-                                                    ₹{order.totalPrice}
-                                                </p>
-                                            </div>
-
-                                            {/* Interactive Status Dropdown */}
-                                            <div className="flex items-center gap-2">
-                                                <label className="text-[10px] font-bold uppercase text-gray-400">
-                                                    Status:
-                                                </label>
-                                                <select
-                                                    value={order.status}
-                                                    onChange={(e) =>
-                                                        handleUpdateOrderStatus(order._id, e.target.value)
-                                                    }
-                                                    className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-bold text-gray-800 outline-none transition focus:border-orange-500 focus:bg-white"
-                                                >
-                                                    <option value="Pending">Pending</option>
-                                                    <option value="Processing">Processing</option>
-                                                    <option value="Shipped">Shipped</option>
-                                                    <option value="Delivered">Delivered</option>
-                                                    <option value="Cancelled">Cancelled</option>
-                                                    <option value="Returned">Returned</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Order Items Summary */}
-                                    <div className="mt-4 flex flex-wrap gap-4">
-                                        {order.orderItems.map((item, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50/50 p-2 text-xs"
-                                            >
-                                                <img
-                                                    src={item.image}
-                                                    alt={item.name}
-                                                    className="h-10 w-10 rounded-lg object-cover"
-                                                />
-                                                <div>
-                                                    <p className="line-clamp-1 font-bold text-gray-900">
-                                                        {item.name}
-                                                    </p>
-                                                    <p className="text-[10px] text-gray-500">
-                                                        Qty: {item.qty} × ₹{item.price}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Delivery Address */}
-                                    <div className="mt-4 rounded-xl bg-orange-50/50 p-3 text-xs text-gray-700">
-                                        <span className="font-bold text-orange-900">
-                                            Shipping Destination:{' '}
-                                        </span>
-                                        {order.shippingAddress.address}, {order.shippingAddress.city},{' '}
-                                        {order.shippingAddress.postalCode}, {order.shippingAddress.country}
-                                    </div>
-                                </div>
-                            ))}
-                            {filteredOrders.length === 0 && (
-                                <p className="py-12 text-center text-xs text-gray-400">
-                                    No orders found matching this filter.
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                )}
+                {/* TAB 3: CUSTOMER ORDERS & LIFECYCLE MANAGEMENT */}
+                {activeTab === 'orders' && <AdminOrdersTab userToken={user?.token} />}
 
                 {/* TAB 4: STORE LOOK & APPEARANCE CUSTOMIZER */}
                 {activeTab === 'appearance' && (

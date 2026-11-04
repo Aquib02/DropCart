@@ -48,6 +48,24 @@ const addOrderItems = async (req, res) => {
             isPaid: paymentMethod === 'Online' || paymentMethod === 'Card',
             paidAt: paymentMethod === 'Online' || paymentMethod === 'Card' ? Date.now() : null,
             status: 'Pending',
+            trackingNumber: `DC-TRK-${Date.now().toString().slice(-6)}`,
+            courierPartner: 'BlueDart Express',
+            invoice: {
+                invoiceNumber: `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+                invoiceDate: new Date(),
+                subtotal: Number(totalPrice) || 0,
+                taxAmount: Math.round((Number(totalPrice) || 0) * 0.18),
+                discountAmount: 0,
+            },
+            timeline: [
+                {
+                    status: 'Pending',
+                    title: 'Order Placed',
+                    description: `Order successfully placed via ${paymentMethod || 'COD'}.`,
+                    timestamp: new Date(),
+                    performedBy: req.user?.name || 'Customer',
+                },
+            ],
         });
 
         const createdOrder = await order.save();
@@ -168,6 +186,15 @@ const updateOrderStatus = async (req, res) => {
                 order.isPaid = true;
                 order.paidAt = order.paidAt || Date.now();
             }
+
+            order.timeline = order.timeline || [];
+            order.timeline.push({
+                status,
+                title: `Status: ${status}`,
+                description: `Order status updated to ${status}.`,
+                timestamp: new Date(),
+                performedBy: req.user?.name || 'Administrator',
+            });
         }
 
         if (isPaid !== undefined) {
@@ -564,6 +591,334 @@ const getOrderStats = async (req, res) => {
     }
 };
 
+// Bulk Order Status Updates
+const bulkUpdateOrderStatus = async (req, res) => {
+    try {
+        const { orderIds, status, isPaid } = req.body;
+        if (!Array.isArray(orderIds) || orderIds.length === 0) {
+            return res.status(400).json({ message: 'Order IDs array is required' });
+        }
+
+        let updatedCount = 0;
+        const io = req.app.get('io');
+
+        for (const id of orderIds) {
+            const order = await Order.findById(id);
+            if (order) {
+                // If cancelling, restock items
+                if (status === 'Cancelled' && order.status !== 'Cancelled') {
+                    for (const item of order.orderItems) {
+                        const prod = await Product.findById(item.product);
+                        if (prod) {
+                            prod.countInStock += item.qty;
+                            prod.isOutOfStock = false;
+                            await prod.save();
+                        }
+                    }
+                }
+
+                order.status = status || order.status;
+                if (status === 'Delivered') {
+                    order.deliveredAt = Date.now();
+                    order.isPaid = true;
+                    order.paidAt = order.paidAt || Date.now();
+                }
+                if (isPaid !== undefined) {
+                    order.isPaid = Boolean(isPaid);
+                    if (order.isPaid && !order.paidAt) order.paidAt = Date.now();
+                }
+
+                order.timeline = order.timeline || [];
+                order.timeline.push({
+                    status: order.status,
+                    title: `Batch Status: ${order.status}`,
+                    description: `Status updated via bulk batch processing.`,
+                    timestamp: new Date(),
+                    performedBy: req.user?.name || 'Administrator'
+                });
+
+                await order.save();
+                updatedCount++;
+
+                if (io) {
+                    io.to(`user_${order.user}`).emit('orderStatusUpdated', {
+                        orderId: order._id,
+                        status: order.status,
+                        isPaid: order.isPaid
+                    });
+                }
+            }
+        }
+
+        if (io) {
+            io.to('admin_channel').emit('ordersBulkUpdated', { updatedCount, status });
+        }
+
+        res.json({
+            success: true,
+            message: `Batch updated status to '${status}' for ${updatedCount} order(s).`,
+            count: updatedCount
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Bulk status update failed', error: error.message });
+    }
+};
+
+// Update Delivery Tracking & Courier
+const updateDeliveryTracking = async (req, res) => {
+    try {
+        const { courierPartner, trackingNumber, estimatedDeliveryDate, notes } = req.body;
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        order.courierPartner = courierPartner || order.courierPartner;
+        order.trackingNumber = trackingNumber || order.trackingNumber;
+        if (estimatedDeliveryDate) order.estimatedDeliveryDate = new Date(estimatedDeliveryDate);
+
+        order.timeline = order.timeline || [];
+        order.timeline.push({
+            status: order.status,
+            title: `Dispatch Update: ${courierPartner || 'Courier'}`,
+            description: `AWB / Tracking ID: ${trackingNumber}. ${notes || 'Handed over to carrier.'}`,
+            timestamp: new Date(),
+            performedBy: req.user?.name || 'Logistics Admin'
+        });
+
+        const updated = await order.save();
+
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`user_${order.user}`).emit('orderTrackingUpdated', {
+                orderId: order._id,
+                trackingNumber: order.trackingNumber,
+                courierPartner: order.courierPartner,
+                estimatedDeliveryDate: order.estimatedDeliveryDate
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Delivery tracking information saved successfully.',
+            order: updated
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Tracking update failed', error: error.message });
+    }
+};
+
+// Handle Return Request (Customer / Admin)
+const handleReturnRequest = async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        order.status = 'Return_Requested';
+        order.returnRequest = {
+            reason: reason || 'Item return requested',
+            status: 'Requested',
+            requestedAt: new Date(),
+            refundAmount: order.totalPrice,
+            adminNotes: ''
+        };
+
+        order.timeline = order.timeline || [];
+        order.timeline.push({
+            status: 'Return_Requested',
+            title: 'Return Request Filed',
+            description: `Customer submitted return request: "${reason}"`,
+            timestamp: new Date(),
+            performedBy: req.user?.name || 'Customer'
+        });
+
+        const updated = await order.save();
+
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin_channel').emit('returnRequestFiled', {
+                orderId: order._id,
+                customer: req.user?.name,
+                reason
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Return request submitted successfully. Our team will review and approve refund.',
+            order: updated
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Return request failed', error: error.message });
+    }
+};
+
+// Process Refund & Return Approval
+const processRefund = async (req, res) => {
+    try {
+        const { action, refundAmount, adminNotes } = req.body; // action: 'approve' | 'reject'
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        if (action === 'approve') {
+            // Restock items back into inventory
+            for (const item of order.orderItems) {
+                const prod = await Product.findById(item.product);
+                if (prod) {
+                    prod.countInStock += item.qty;
+                    prod.isOutOfStock = false;
+                    await prod.save();
+                }
+            }
+
+            order.status = 'Refunded';
+            order.returnRequest = {
+                ...order.returnRequest,
+                status: 'Completed',
+                resolvedAt: new Date(),
+                refundAmount: Number(refundAmount) || order.totalPrice,
+                adminNotes: adminNotes || 'Refund approved and issued'
+            };
+
+            order.timeline = order.timeline || [];
+            order.timeline.push({
+                status: 'Refunded',
+                title: 'Refund Approved & Dispatched',
+                description: `Refund of ₹${order.returnRequest.refundAmount} approved. Stock restored.`,
+                timestamp: new Date(),
+                performedBy: req.user?.name || 'Administrator'
+            });
+        } else {
+            order.returnRequest = {
+                ...order.returnRequest,
+                status: 'Rejected',
+                resolvedAt: new Date(),
+                adminNotes: adminNotes || 'Return request rejected'
+            };
+
+            order.timeline = order.timeline || [];
+            order.timeline.push({
+                status: order.status,
+                title: 'Return Request Rejected',
+                description: adminNotes || 'Return request did not meet return policy criteria.',
+                timestamp: new Date(),
+                performedBy: req.user?.name || 'Administrator'
+            });
+        }
+
+        const updated = await order.save();
+
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`user_${order.user}`).emit('refundProcessed', {
+                orderId: order._id,
+                action,
+                status: order.status
+            });
+        }
+
+        res.json({
+            success: true,
+            message: action === 'approve' ? 'Refund approved and inventory restocked.' : 'Return request rejected.',
+            order: updated
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Refund processing failed', error: error.message });
+    }
+};
+
+// Generate Tax Invoice Breakdown
+const getOrderInvoice = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id).populate('user', 'name email phone');
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        const subtotal = order.orderItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const taxRate = 0.18; // 18% GST standard
+        const taxAmount = Math.round(subtotal * taxRate);
+        const discountAmount = Math.max(0, subtotal + taxAmount - order.totalPrice);
+
+        const invoiceData = {
+            invoiceNumber: order.invoice?.invoiceNumber || `INV-${new Date(order.createdAt).getFullYear()}-${order._id.toString().slice(-6)}`,
+            invoiceDate: order.invoice?.invoiceDate || order.createdAt,
+            orderId: order._id,
+            orderDate: order.createdAt,
+            customer: {
+                name: order.user?.name || 'Customer',
+                email: order.user?.email || 'N/A',
+                phone: order.user?.phone || 'N/A',
+            },
+            shippingAddress: order.shippingAddress,
+            paymentMethod: order.paymentMethod,
+            paymentStatus: order.isPaid ? 'PAID' : 'PENDING',
+            items: order.orderItems.map(item => ({
+                name: item.name,
+                qty: item.qty,
+                unitPrice: item.price,
+                total: item.price * item.qty
+            })),
+            subtotal,
+            taxRate: '18% GST',
+            taxAmount,
+            discountAmount,
+            totalPrice: order.totalPrice,
+            company: {
+                name: 'DropCart Enterprise Technologies Pvt. Ltd.',
+                gstin: '07AAAAA0000A1Z5',
+                address: 'Connaught Place, Central Delhi, New Delhi 110001, India',
+                supportEmail: 'support@dropcart.in',
+            }
+        };
+
+        res.json(invoiceData);
+    } catch (error) {
+        res.status(500).json({ message: 'Error generating invoice', error: error.message });
+    }
+};
+
+// Generate Shipping Label
+const getOrderShippingLabel = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id).populate('user', 'name email phone');
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        const labelData = {
+            trackingNumber: order.trackingNumber || `DC-TRK-${order._id.toString().slice(-6)}`,
+            orderId: order._id,
+            courierPartner: order.courierPartner || 'BlueDart Express',
+            shippingType: 'EXPRESS AIR CARGO',
+            paymentMethod: order.paymentMethod,
+            collectibleAmount: order.isPaid ? 0 : order.totalPrice,
+            customer: {
+                name: order.user?.name || 'Customer',
+                phone: order.user?.phone || '9876543210',
+            },
+            shippingAddress: order.shippingAddress,
+            itemCount: order.orderItems.reduce((acc, item) => acc + item.qty, 0),
+            weightKg: order.shippingLabel?.weightKg || 0.85,
+            dimensions: order.shippingLabel?.dimensions || '25x20x10 cm',
+            dispatchedFrom: {
+                name: 'DropCart Central Fulfillment Hub #4',
+                city: 'Gurugram',
+                pincode: '122002',
+                country: 'India'
+            }
+        };
+
+        res.json(labelData);
+    } catch (error) {
+        res.status(500).json({ message: 'Error generating shipping label', error: error.message });
+    }
+};
+
 module.exports = {
     addOrderItems,
     getOrderById,
@@ -571,4 +926,10 @@ module.exports = {
     getOrders,
     updateOrderStatus,
     getOrderStats,
+    bulkUpdateOrderStatus,
+    updateDeliveryTracking,
+    handleReturnRequest,
+    processRefund,
+    getOrderInvoice,
+    getOrderShippingLabel,
 };
