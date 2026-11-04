@@ -30,7 +30,11 @@ const openApiSpec = {
     { name: 'Orders & Live Tracking', description: 'Order checkout, history, status updates, and sales analytics' },
     { name: 'Coupons & Discounts', description: 'Promotional discount codes, validation, and usage limits' },
     { name: 'Storefront Appearance', description: 'Hero banners, themes, announcement marquee, and live sync' },
-    { name: 'Payments (Razorpay)', description: 'Order payment creation, cryptographic HMAC verification, and webhooks' }
+    { name: 'Payments (Razorpay)', description: 'Order payment creation, cryptographic HMAC verification, and webhooks' },
+    { name: 'AI Business Intelligence', description: 'Gemini 2.5 grounded executive Q&A, SEO copy studio, demand forecast, and fraud sentinel' },
+    { name: 'Customer Engagement & Helpdesk', description: 'Support tickets, abandoned cart recovery offers, and store broadcasts' },
+    { name: 'Inventory & Stock Valuation', description: 'Real-time stock velocity, valuation, adjustments, and audit trails' },
+    { name: 'Homepage Visual Builder', description: 'Draft and published layouts, section reordering, and rollback' }
   ],
   paths: {
     '/api/users/login': {
@@ -352,6 +356,87 @@ const openApiSpec = {
         responses: {
           200: { description: 'Payment verified and order marked as paid' }
         }
+      }
+    },
+    '/api/admin-ai/ask': {
+      post: {
+        tags: ['AI Business Intelligence'],
+        summary: 'Grounded executive assistant answering business metrics using Gemini 2.5',
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['query'],
+                properties: { query: { type: 'string', example: 'What is our total revenue and top product this month?' } }
+              }
+            }
+          }
+        },
+        responses: { 200: { description: 'Executive response grounded in live MongoDB data' } }
+      }
+    },
+    '/api/admin-ai/demand-forecast': {
+      get: {
+        tags: ['AI Business Intelligence'],
+        summary: 'Predictive 30-day velocity and stockout forecaster',
+        security: [{ BearerAuth: [] }],
+        responses: { 200: { description: 'Calculated stockout days and replenishment recommendations' } }
+      }
+    },
+    '/api/engagement/tickets': {
+      get: {
+        tags: ['Customer Engagement & Helpdesk'],
+        summary: 'List helpdesk support tickets with status and priority filters',
+        security: [{ BearerAuth: [] }],
+        responses: { 200: { description: 'Tickets list and aggregate counters' } }
+      },
+      post: {
+        tags: ['Customer Engagement & Helpdesk'],
+        summary: 'Create a new support ticket',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['subject', 'message'],
+                properties: {
+                  subject: { type: 'string' },
+                  category: { type: 'string' },
+                  priority: { type: 'string' },
+                  message: { type: 'string' }
+                }
+              }
+            }
+          }
+        },
+        responses: { 201: { description: 'Ticket created' } }
+      }
+    },
+    '/api/engagement/abandoned-carts': {
+      get: {
+        tags: ['Customer Engagement & Helpdesk'],
+        summary: 'Retrieve abandoned cart and inactive wishlist prospects',
+        security: [{ BearerAuth: [] }],
+        responses: { 200: { description: 'List of recovery targets and recoverable valuation' } }
+      }
+    },
+    '/api/inventory/dashboard': {
+      get: {
+        tags: ['Inventory & Stock Valuation'],
+        summary: 'Inventory overview, stock valuation, and SKU tracking',
+        security: [{ BearerAuth: [] }],
+        responses: { 200: { description: 'Inventory valuation and SKU records' } }
+      }
+    },
+    '/api/homepage-layout': {
+      get: {
+        tags: ['Homepage Visual Builder'],
+        summary: 'Fetch published homepage layout structure for storefront',
+        responses: { 200: { description: 'Active sections and layout configuration' } }
       }
     }
   },

@@ -29,6 +29,25 @@ const Cart = () => {
     const [couponMessage, setCouponMessage] = useState({ text: '', type: '' });
     const [activeCouponsList, setActiveCouponsList] = useState([]);
 
+    // Dynamic Shipping Rules from Admin Store Settings
+    const [shippingRules, setShippingRules] = useState({
+        freeThreshold: 499,
+        standardFee: 49,
+    });
+
+    useEffect(() => {
+        axios.get(`${API_BASE_URL}/api/settings`)
+            .then(res => {
+                if (res.data?.shipping) {
+                    setShippingRules({
+                        freeThreshold: res.data.shipping.freeShippingThreshold ?? 499,
+                        standardFee: res.data.shipping.standardShippingFee ?? 49,
+                    });
+                }
+            })
+            .catch(() => {});
+    }, []);
+
     // SuperCoins loyalty redemption state
     const [useCoins, setUseCoins] = useState(false);
     const userCoins = user?.coins || 0;
@@ -109,10 +128,10 @@ const Cart = () => {
     };
 
     const couponDiscount = appliedCoupon?.discount || 0;
-    const deliveryThreshold = 500;
+    const deliveryThreshold = shippingRules.freeThreshold;
     const isFreeDelivery = totalPrice >= deliveryThreshold;
     const amountNeededForFreeDelivery = Math.max(0, deliveryThreshold - totalPrice);
-    const deliveryFee = isFreeDelivery ? 0 : 40;
+    const deliveryFee = isFreeDelivery ? 0 : shippingRules.standardFee;
 
     const finalPayable = Math.max(0, totalPrice - couponDiscount - coinsDiscount + deliveryFee);
 

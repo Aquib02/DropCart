@@ -51,6 +51,15 @@ const Checkout = () => {
         coinsDiscount: 0,
     });
 
+    // Dynamic Shipping & Gateway Settings from MongoDB
+    const [storeSettings, setStoreSettings] = useState({
+        freeShippingThreshold: 499,
+        standardShippingFee: 49,
+        codEnabled: true,
+        razorpayEnabled: true,
+        upiEnabled: true
+    });
+
     useEffect(() => {
         try {
             const saved = sessionStorage.getItem('dropcart_discounts');
@@ -60,12 +69,26 @@ const Checkout = () => {
         } catch (e) {
             console.error('Failed to parse discounts in checkout', e);
         }
+
+        axios.get(`${API_BASE_URL}/api/settings`)
+            .then(res => {
+                if (res.data) {
+                    setStoreSettings({
+                        freeShippingThreshold: res.data.shipping?.freeShippingThreshold ?? 499,
+                        standardShippingFee: res.data.shipping?.standardShippingFee ?? 49,
+                        codEnabled: res.data.paymentMethods?.codEnabled !== false,
+                        razorpayEnabled: res.data.paymentMethods?.razorpayEnabled !== false,
+                        upiEnabled: res.data.paymentMethods?.upiEnabled !== false,
+                    });
+                }
+            })
+            .catch(() => {});
     }, []);
 
     const couponDiscount = discountInfo.couponDiscount || 0;
     const coinsDiscount = discountInfo.coinsDiscount || 0;
-    const isFreeDelivery = totalPrice >= 500;
-    const deliveryFee = isFreeDelivery ? 0 : 40;
+    const isFreeDelivery = totalPrice >= storeSettings.freeShippingThreshold;
+    const deliveryFee = isFreeDelivery ? 0 : storeSettings.standardShippingFee;
     const finalAmount = Math.max(0, totalPrice - couponDiscount - coinsDiscount + deliveryFee);
 
     // Pre-populate customer details from profile if available
@@ -409,48 +432,52 @@ const Checkout = () => {
                                     2. Payment Method
                                 </h2>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <label
-                                        className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition ${
-                                            paymentMethod === 'COD'
-                                                ? 'border-orange-500 bg-orange-50/40 text-orange-900'
-                                                : 'border-gray-200 bg-white hover:bg-gray-50'
-                                        }`}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="paymentMethod"
-                                            value="COD"
-                                            checked={paymentMethod === 'COD'}
-                                            onChange={(e) => setPaymentMethod(e.target.value)}
-                                            className="text-orange-500"
-                                        />
-                                        <div>
-                                            <p className="text-xs font-bold">Cash on Delivery</p>
-                                            <p className="text-[10px] text-gray-500">Pay when arrived</p>
-                                        </div>
-                                    </label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {storeSettings.codEnabled && (
+                                        <label
+                                            className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition ${
+                                                paymentMethod === 'COD'
+                                                    ? 'border-orange-500 bg-orange-50/40 text-orange-900'
+                                                    : 'border-gray-200 bg-white hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="paymentMethod"
+                                                value="COD"
+                                                checked={paymentMethod === 'COD'}
+                                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                                className="text-orange-500"
+                                            />
+                                            <div>
+                                                <p className="text-xs font-bold">Cash on Delivery</p>
+                                                <p className="text-[10px] text-gray-500">Pay upon doorstep arrival</p>
+                                            </div>
+                                        </label>
+                                    )}
 
-                                    <label
-                                        className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition ${
-                                            paymentMethod === 'Online'
-                                                ? 'border-orange-500 bg-orange-50/40 text-orange-900'
-                                                : 'border-gray-200 bg-white hover:bg-gray-50'
-                                        }`}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="paymentMethod"
-                                            value="Online"
-                                            checked={paymentMethod === 'Online'}
-                                            onChange={(e) => setPaymentMethod(e.target.value)}
-                                            className="text-orange-500"
-                                        />
-                                        <div>
-                                            <p className="text-xs font-bold">Instant Online Pay</p>
-                                            <p className="text-[10px] text-gray-500">UPI / Cards</p>
-                                        </div>
-                                    </label>
+                                    {storeSettings.razorpayEnabled && (
+                                        <label
+                                            className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition ${
+                                                paymentMethod === 'Online'
+                                                    ? 'border-orange-500 bg-orange-50/40 text-orange-900'
+                                                    : 'border-gray-200 bg-white hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="paymentMethod"
+                                                value="Online"
+                                                checked={paymentMethod === 'Online'}
+                                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                                className="text-orange-500"
+                                            />
+                                            <div>
+                                                <p className="text-xs font-bold">Instant Online Pay</p>
+                                                <p className="text-[10px] text-gray-500">UPI / Cards / NetBanking</p>
+                                            </div>
+                                        </label>
+                                    )}
                                 </div>
                             </div>
 
