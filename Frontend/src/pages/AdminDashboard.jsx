@@ -487,7 +487,7 @@ const AdminDashboard = () => {
 
             {/* Collapsible Enterprise Sidebar */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-gray-200/80 bg-white transition-all duration-300 ease-in-out lg:static ${
+                className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-gray-200/80 bg-white transition-all duration-300 ease-in-out lg:static lg:sticky lg:top-0 lg:h-screen lg:shrink-0 ${
                     isSidebarCollapsed ? 'w-20' : 'w-64'
                 } ${mobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}`}
             >

@@ -47,9 +47,11 @@ function AppContent() {
         return <MaintenanceNotice message={maintenance.message} />;
     }
 
+    const isAdminRoute = location.pathname.startsWith('/admin');
+
     return (
-        <div className="flex flex-col min-h-screen bg-[#f8f8f6]">
-            <Navbar />
+        <div className={`flex flex-col min-h-screen ${isAdminRoute ? 'bg-[#f8f9fa]' : 'bg-[#f8f8f6]'}`}>
+            {!isAdminRoute && <Navbar />}
             <main className="flex-grow">
                 <Routes>
                     <Route path="/" element={<Home />} />
@@ -73,12 +75,12 @@ function AppContent() {
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </main>
-            <CompareDrawer />
-            <AIAssistantDrawer />
+            {!isAdminRoute && <CompareDrawer />}
+            {!isAdminRoute && <AIAssistantDrawer />}
             <ToastNotification />
-            <PromotionalPopup />
-            <BroadcastBanner />
-            <Footer />
+            {!isAdminRoute && <PromotionalPopup />}
+            {!isAdminRoute && <BroadcastBanner />}
+            {!isAdminRoute && <Footer />}
         </div>
     );
 }
