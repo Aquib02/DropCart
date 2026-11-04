@@ -23,6 +23,7 @@ const campaignRoutes = require('./routes/campaignRoutes.js');
 const homepageLayoutRoutes = require('./routes/homepageLayoutRoutes.js');
 const inventoryRoutes = require('./routes/inventoryRoutes.js');
 const customerRoutes = require('./routes/customerRoutes.js');
+const adminAiRoutes = require('./routes/adminAiRoutes.js');
 const swaggerDoc = require('./docs/swaggerDoc.js');
 
 connectDB();
@@ -82,6 +83,7 @@ app.use('/api/campaigns', campaignRoutes);
 app.use('/api/homepage-layout', homepageLayoutRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/admin-ai', adminAiRoutes);
 app.use('/api/docs', swaggerDoc);
 
 // Health check endpoint

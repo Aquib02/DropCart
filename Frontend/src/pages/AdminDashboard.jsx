@@ -50,6 +50,7 @@ import AdminVisualEditorTab from '../components/admin/AdminVisualEditorTab';
 import AdminProductsTab from '../components/admin/AdminProductsTab';
 import AdminInventoryTab from '../components/admin/AdminInventoryTab';
 import AdminOrdersTab from '../components/admin/AdminOrdersTab';
+import AdminAiTab from '../components/admin/AdminAiTab';
 import { exportOrdersToCSV, exportAnalyticsReportToCSV } from '../utils/exportUtils';
 import { useSocket } from '../context/SocketContext';
 
@@ -534,6 +535,26 @@ const AdminDashboard = () => {
                                 <BarChart3 className="h-4 w-4 shrink-0" />
                                 {!isSidebarCollapsed && <span className="truncate">Overview & KPIs</span>}
                             </button>
+
+                            <button
+                                onClick={() => { setActiveTab('ai_assistant'); setMobileSidebarOpen(false); }}
+                                className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-xs font-bold transition ${
+                                    activeTab === 'ai_assistant'
+                                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/20'
+                                        : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                                } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                                title={isSidebarCollapsed ? 'AI Business Assistant' : undefined}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Sparkles className="h-4 w-4 shrink-0 text-purple-500" />
+                                    {!isSidebarCollapsed && <span className="truncate">AI Assistant</span>}
+                                </div>
+                                {!isSidebarCollapsed && (
+                                    <span className="rounded-full bg-purple-100 px-1.5 py-0.5 text-[9px] font-black text-purple-700">
+                                        Gemini
+                                    </span>
+                                )}
+                            </button>
                         </nav>
                     </div>
 
@@ -774,6 +795,7 @@ const AdminDashboard = () => {
                         <div className="hidden sm:block">
                             <h1 className="text-sm font-black capitalize text-gray-900">
                                 {activeTab === 'overview' && 'Executive Dashboard & Analytics'}
+                                {activeTab === 'ai_assistant' && 'AI-Powered Business Intelligence Assistant'}
                                 {activeTab === 'products' && 'Product Management & Catalog Engine'}
                                 {activeTab === 'inventory' && 'Inventory Control & Stock Valuation'}
                                 {activeTab === 'orders' && 'Order Fulfillment & Lifecycle'}
@@ -1315,6 +1337,9 @@ const AdminDashboard = () => {
                         )}
                     </div>
                 )}
+
+                {/* TAB: AI-POWERED ADMIN ASSISTANT */}
+                {activeTab === 'ai_assistant' && <AdminAiTab userToken={user.token} />}
 
                 {/* TAB 2: ADVANCED PRODUCT MANAGEMENT */}
                 {activeTab === 'products' && <AdminProductsTab userToken={user.token} />}
